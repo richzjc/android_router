@@ -6,7 +6,7 @@ publish {
     groupId = 'com.richzjc'
     artifactId = 'router_annotation'
     publishVersion = '1.0.0'
-    desc = '类似于Butterknife的形式获取Intent里面携带的参数'
+    desc = '路由库'
     website = 'https://github.com/novoda/bintray-release'
 }
 

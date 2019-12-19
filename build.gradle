@@ -4,7 +4,7 @@ buildscript {
     ext.kotlin_version = '1.3.31'
     repositories {
         maven {
-            url 'https://dl.bintray.com/leifzhang/maven'
+            url 'https://dl.bintray.com/richzjc/maven'
         }
         jcenter()
         maven {

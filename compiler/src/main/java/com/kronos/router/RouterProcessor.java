@@ -86,12 +86,10 @@ public class RouterProcessor extends AbstractProcessor {
             //field type
             BindRouter router = element.getAnnotation(BindRouter.class);
             ClassName className;
-            Name methodName = null;
             if (element.getKind() == ElementKind.CLASS) {
                 className = ClassName.get((TypeElement) element);
             } else if (element.getKind() == ElementKind.METHOD) {
                 className = ClassName.get((TypeElement) element.getEnclosingElement());
-                methodName = element.getSimpleName();
             } else {
                 throw new IllegalArgumentException("unknow type");
             }
