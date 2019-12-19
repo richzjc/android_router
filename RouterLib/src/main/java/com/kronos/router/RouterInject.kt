@@ -3,6 +3,7 @@ package com.kronos.router
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 
 /**
@@ -13,28 +14,30 @@ object RouterInject {
         val bundle = intent.extras
         val target = bundle?.getString("target")
         val inject = getActivityInject(activity) ?: return
-        inject.inject(bundle!!)
         val fragmentManager = activity.supportFragmentManager
         val fragments = fragmentManager.fragments
-        for (fragment in fragments) {
+        var fragment : Fragment
+        for (i in 0 until fragments.size) {
+            fragment = fragments[i]
             if (fragment == null) {
                 continue
             }
-            val fragmentInject = inject(fragment, target)
+            val fragmentInject = activityInject(fragment, target)
             if (fragmentInject != null) {
                 fragmentInject.inject(bundle)
                 break
             }
         }
+        inject.inject(bundle!!)
     }
 
-    fun inject(fragment: androidx.fragment.app.Fragment, bundle: Bundle?) {
+    fun inject(fragment: Fragment, bundle: Bundle?) {
         val target = bundle?.getString("target")
         val inject = deal(fragment, target)
         inject?.inject(bundle!!)
     }
 
-    private fun inject(fragment: androidx.fragment.app.Fragment, target: String?): IFragmentInject? {
+    private fun activityInject(fragment: Fragment, target: String?): IFragmentInject? {
         return deal(fragment, target)
     }
 
