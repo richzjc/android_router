@@ -2,6 +2,9 @@ package com.kronos.router;
 
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
+import com.kronos.router.exception.ModuleNameNotFoundException;
+import com.kronos.router.utils.Constants;
+import com.kronos.router.utils.EmptyUtils;
 import com.kronos.router.utils.Logger;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -10,6 +13,7 @@ import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -30,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 public class RouterProcessor extends AbstractProcessor {
     private Filer filer;
     private Logger logger;
+    private String moduleName;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -38,6 +43,10 @@ public class RouterProcessor extends AbstractProcessor {
         filer = processingEnv.getFiler();
         logger = new Logger(messager);
         logger.info("start processor");
+        Map<String, String> options = processingEnv.getOptions();
+        if (!EmptyUtils.isEmpty(options)) {
+            moduleName = options.get(Constants.MODULE_NAME);
+        }
     }
 
 
@@ -45,14 +54,12 @@ public class RouterProcessor extends AbstractProcessor {
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> ret = new HashSet<>();
         ret.add(BindRouter.class.getCanonicalName());
-        ret.add(BindModule.class.getCanonicalName());
         return ret;
     }
 
     @Override
     public Set<String> getSupportedOptions() {
-        return ImmutableSet.of("com.kronos.router.BindRouter",
-                "com.kronos.router.BindModule");
+        return ImmutableSet.of("com.kronos.router.BindRouter");
     }
 
     @Override
@@ -63,13 +70,10 @@ public class RouterProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(BindModule.class);
-        String name;
-        for (Element e : elements) {
-            BindModule annotation = e.getAnnotation(BindModule.class);
-            name = annotation.value();
-            logger.info("BindModule:" + name);
-            initRouter(name, roundEnv);
+        if(EmptyUtils.isEmpty(moduleName)){
+            throw new ModuleNameNotFoundException("必须要在对应的module下面配置moduleName");
+        }else{
+            initRouter(moduleName, roundEnv);
         }
         return true;
     }
@@ -78,7 +82,7 @@ public class RouterProcessor extends AbstractProcessor {
         MethodSpec.Builder initMethod = MethodSpec.methodBuilder("init")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
         Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(BindRouter.class);
-        logger.warning("size：" + elements.size());
+        logger.warning("size：" + elements.size() + "; moduleName = " + moduleName);
         //一、收集信息
         int count = 0;
         for (Element element : elements) {
