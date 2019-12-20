@@ -16,6 +16,7 @@ import android.text.TextUtils;
 import com.kronos.router.exception.ContextNotProvided;
 import com.kronos.router.exception.NotInitException;
 import com.kronos.router.exception.RouteNotFoundException;
+import com.kronos.router.fragment.FragmentRouterManager;
 import com.kronos.router.interceptor.RealCall;
 import com.kronos.router.model.FragmentRouterModel;
 import com.kronos.router.model.HostParams;
@@ -81,8 +82,9 @@ public class Router {
         map(url, mClass, targetFragment, null);
     }
 
-    public static void map(String url, Class<? extends Activity> mClass, FragmentRouterModel fragmentRouterModel){
+    public static void map(String url, Class<? extends Activity> mClass, FragmentRouterModel... fragmentRouterModels){
         map(url, mClass);
+        FragmentRouterManager.getInstance().put(url, fragmentRouterModels);
     }
 
     public static void map(String url, Class<? extends Activity> mClass, @Nullable Class<? extends Fragment> targetFragment,
