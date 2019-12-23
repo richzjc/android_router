@@ -1,14 +1,12 @@
 package com.kronos.router.fragment;
 
 import com.kronos.router.model.FragmentRouterModel;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 public class FragmentRouterManager {
 
-    private HashMap<String, List<FragmentRouterModel>> map;
+    private HashMap<String, Map<String, FragmentRouterModel>> map;
     private static volatile FragmentRouterManager instance;
 
     public static FragmentRouterManager getInstance() {
@@ -27,15 +25,18 @@ public class FragmentRouterManager {
 
     public void put(String url, FragmentRouterModel[] routerModels) {
         if (map.containsKey(url)) {
+            Map<String, FragmentRouterModel> subMap = map.get(url);
             for (int i = 0; i < routerModels.length; i++) {
-                map.get(url).add(routerModels[i]);
+                if(!subMap.containsKey(routerModels[i].fragmentRouterUrl)){
+                   subMap.put(routerModels[i].fragmentRouterUrl, routerModels[i]);
+                }
             }
         } else {
-            List<FragmentRouterModel> list = new ArrayList<>();
+            Map<String, FragmentRouterModel> subMap = new HashMap<>();
             for (int i = 0; i < routerModels.length; i++) {
-                map.get(url).add(routerModels[i]);
+                subMap.put(routerModels[i].fragmentRouterUrl, routerModels[i]);
             }
-            map.put(url, list);
+            map.put(url, subMap);
         }
     }
 }

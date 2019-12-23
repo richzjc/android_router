@@ -28,6 +28,17 @@ object RouterInject {
         }
     }
 
+
+    private fun activityInject(){
+
+    }
+
+
+
+
+
+
+
     fun inject(fragment: androidx.fragment.app.Fragment, bundle: Bundle?) {
         val target = bundle?.getString("target")
         val inject = deal(fragment, target)
