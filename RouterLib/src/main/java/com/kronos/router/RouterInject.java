@@ -6,17 +6,16 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TabHost;
-
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-
 import com.kronos.router.fragment.FragmentRouter;
 import com.kronos.router.fragment.FragmentRouterManager;
 import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,8 +29,6 @@ public class RouterInject {
         if(inject != null){
             inject.inject(bundle);
         }
-
-
     }
 
     private static IActivityInject getActivityInject(FragmentActivity activity, Bundle bundle) {
@@ -130,6 +127,46 @@ public class RouterInject {
     }
 
     private static void getViewPagerRouters(ViewPager viewPager, String fieldName, List<String> routers){
+        PagerAdapter pagerAdapter = viewPager.getAdapter();
+        if(pagerAdapter != null){
+            try {
+                Field field = pagerAdapter.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                List list = (List) field.get(pagerAdapter);
+                for(Object obj : list){
+                    if(obj instanceof IFragmentRouter){
+                        String url = ((IFragmentRouter) obj).getFragmentRouter();
+                        if(!TextUtils.isEmpty(url)){
+                            routers.add(url);
+                        }else{
+                            parseAnnotation(obj, routers);
+                        }
+                    }else{
+                        parseAnnotation(obj, routers);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void parseAnnotation(Object obj, List<String> routers){
+        FragmentRouter fragmentRouter = obj.getClass().getAnnotation(FragmentRouter.class);
+        if(fragmentRouter != null){
+            String url = fragmentRouter.url();
+            if(!TextUtils.isEmpty(url)){
+                routers.add(url);
+            }else{
+                routers.add("");
+            }
+        }else{
+            routers.add("");
+        }
+    }
+
+
+    public static void inject(Fragment fragment, Bundle bundle){
 
     }
 }
