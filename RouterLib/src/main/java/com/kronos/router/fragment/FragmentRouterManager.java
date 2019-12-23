@@ -39,4 +39,18 @@ public class FragmentRouterManager {
             map.put(url, subMap);
         }
     }
+
+    public String getFragmentRouterPath(String activityUrl, String fragmentUrl){
+        Map<String, FragmentRouterModel> data = map.get(activityUrl);
+        if(data != null) {
+            FragmentRouterModel model = data.get(fragmentUrl);
+            if(model !=  null){
+                return model.path;
+            }else{
+                return "";
+            }
+        }else{
+            return "";
+        }
+    }
 }

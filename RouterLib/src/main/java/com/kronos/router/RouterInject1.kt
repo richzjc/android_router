@@ -8,7 +8,7 @@ import androidx.fragment.app.FragmentActivity
 /**
  * Created by zhangyang on 16/7/18.
  */
-object RouterInject {
+object RouterInject1 {
     fun inject(activity: FragmentActivity, intent: Intent) {
         val bundle = intent.extras
         val target = bundle?.getString("target")
@@ -28,16 +28,13 @@ object RouterInject {
         }
     }
 
-
-    private fun activityInject(){
-
+    private fun getActivityInject(any: Any): IActivityInject? {
+        return if (any is IActivityInject) {
+            any
+        } else {
+            null
+        }
     }
-
-
-
-
-
-
 
     fun inject(fragment: androidx.fragment.app.Fragment, bundle: Bundle?) {
         val target = bundle?.getString("target")
@@ -53,14 +50,6 @@ object RouterInject {
         return if (TextUtils.equals(any.javaClass.name, target)) {
             getFragmentInject(any)
         } else null
-    }
-
-    private fun getActivityInject(any: Any): IActivityInject? {
-        return if (any is IActivityInject) {
-            any
-        } else {
-            null
-        }
     }
 
     private fun getFragmentInject(any: Any): IFragmentInject? {
