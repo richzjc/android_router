@@ -26,7 +26,8 @@ public class RouterInject {
     public static void inject(FragmentActivity activity, Intent intent) {
         Bundle bundle = intent.getExtras();
         IActivityInject inject = getActivityInject(activity, bundle);
-        if(inject != null){
+        int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
+        if(inject != null && index >= 0){
             inject.inject(bundle);
         }
     }
@@ -37,7 +38,7 @@ public class RouterInject {
             String activityUrl = bundle.getString(Const.ACTIVITY_ROUTER, "");
             String path = FragmentRouterManager.getInstance().getFragmentRouterPath(activityUrl, fragmentUrl);
             if(!TextUtils.isEmpty(path)){
-                int index = 0;
+                int index = -1;
                 String nextFragmentUrl = "";
                 String[] paths = path.split(",");
                 if(paths.length > 0){
@@ -167,6 +168,62 @@ public class RouterInject {
 
 
     public static void inject(Fragment fragment, Bundle bundle){
+        IFragmentInject inject = getFragmentInject(fragment, bundle);
+        int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
+        if(inject != null &&  index >= 0){
+            inject.inject(bundle);
+        }
+    }
 
+    private static IFragmentInject getFragmentInject(Fragment fragment, Bundle bundle) {
+        if(fragment instanceof IFragmentInject) {
+            String path = bundle.getString(Const.FRGMENT_ROUTER, "");
+            if(!TextUtils.isEmpty(path)){
+                int index = -1;
+                String nextFragmentUrl = "";
+                String[] paths = path.split(",");
+                if(paths.length > 0){
+                    String subRouterUrl = paths[0];
+                    List<String> routers = getListRouters(fragment);
+                    for(int i = 0; i < routers.size(); i++){
+                        if(TextUtils.equals(subRouterUrl, routers.get(i))){
+                            index = i;
+                            nextFragmentUrl = getNextFragmentRouter(paths);
+                            break;
+                        }
+                    }
+                }
+                bundle.putInt(Const.FRAGMENT_INDEX, index);
+                bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl);
+                return (IFragmentInject) fragment;
+            }
+        }
+        return null;
+    }
+
+    private static List<String> getListRouters(Fragment obj) {
+        SubFragmentRouters fragmentRouters = obj.getClass().getAnnotation(SubFragmentRouters.class);
+        List<String> routers = new ArrayList<>();
+        if (fragmentRouters != null) {
+            int type = fragmentRouters.fragmentType();
+            if(type == SubFragmentType.TABHOST_FRRAGMENTS){
+                View view = obj.getView().findViewById(fragmentRouters.widgetId());
+                if(!(view instanceof TabHost)){
+                    throw new IllegalArgumentException("该控件不属于TabHost");
+                }else{
+                    getTabHostRouters((TabHost) view, routers);
+                }
+            }else if(type == SubFragmentType.VIEWPAGER_FRAGMENTS){
+                View view = obj.getView().findViewById(fragmentRouters.widgetId());
+                if(!(view instanceof ViewPager)){
+                    throw new IllegalArgumentException("该控件不属于ViewPager");
+                }else{
+                    getViewPagerRouters((ViewPager) view, fragmentRouters.filedName(), routers);
+                }
+            }else{
+                throw new IllegalArgumentException("传入的fragmentType 目前不支持");
+            }
+        }
+        return routers;
     }
 }
