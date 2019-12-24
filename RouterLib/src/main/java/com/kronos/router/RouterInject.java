@@ -1,6 +1,7 @@
 package com.kronos.router;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -18,6 +19,7 @@ import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
+import com.kronos.router.utils.ReflectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -86,14 +88,14 @@ public class RouterInject {
         if (fragmentRouters != null) {
             int type = fragmentRouters.fragmentType();
             if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
-                View view = obj.findViewById(fragmentRouters.widgetId());
+                View view = obj.findViewById(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName()));
                 if (!(view instanceof TabHost)) {
                     throw new IllegalArgumentException("该控件不属于TabHost");
                 } else {
                     getTabHostRouters((TabHost) view, routers);
                 }
             } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
-                View view = obj.findViewById(fragmentRouters.widgetId());
+                View view = obj.findViewById(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName()));
                 if (!(view instanceof ViewPager)) {
                     throw new IllegalArgumentException("该控件不属于ViewPager");
                 } else {
@@ -215,14 +217,14 @@ public class RouterInject {
         if (fragmentRouters != null) {
             int type = fragmentRouters.fragmentType();
             if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
-                View view = obj.getView().findViewById(fragmentRouters.widgetId());
+                View view = obj.getView().findViewById(ReflectUtil.getId(obj.getContext(), "id", fragmentRouters.widgetIdName()));
                 if (!(view instanceof TabHost)) {
                     throw new IllegalArgumentException("该控件不属于TabHost");
                 } else {
                     getTabHostRouters((TabHost) view, routers);
                 }
             } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
-                View view = obj.getView().findViewById(fragmentRouters.widgetId());
+                View view = obj.getView().findViewById(ReflectUtil.getId(obj.getContext(), "id", fragmentRouters.widgetIdName()));
                 if (!(view instanceof ViewPager)) {
                     throw new IllegalArgumentException("该控件不属于ViewPager");
                 } else {
@@ -242,9 +244,9 @@ public class RouterInject {
         View view = null;
         if (fragmentRouters != null) {
             if (obj instanceof Activity)
-                view = ((Activity) obj).findViewById(fragmentRouters.widgetId());
+                view = ((Activity) obj).findViewById(ReflectUtil.getId((Context) obj, "id", fragmentRouters.widgetIdName()));
             else if (obj instanceof Fragment)
-                view = ((Fragment) obj).getView().findViewById(fragmentRouters.widgetId());
+                view = ((Fragment) obj).getView().findViewById(ReflectUtil.getId(((Fragment) obj).getContext(), "id", fragmentRouters.widgetIdName()));
         }
 
         if (view instanceof TabHost) {
