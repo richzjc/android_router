@@ -4,18 +4,19 @@ public class FragmentRouterModel {
     public String fragmentRouterUrl;
     public String path;
     private StringBuilder builder;
+
     private FragmentRouterModel(){
         builder = new StringBuilder();
     }
 
-    class Builder{
+   public static class Builder{
         FragmentRouterModel model;
 
         public Builder nextFragmentRouter(String fragmentRouter){
             if(model == null) {
                 model = new FragmentRouterModel();
             }
-            builder.append(fragmentRouter).append(",");
+            model.builder.append(fragmentRouter).append(",");
             model.fragmentRouterUrl = fragmentRouter;
             return this;
         }
@@ -26,9 +27,9 @@ public class FragmentRouterModel {
             }
             String tempPath = model.builder.toString();
             if(tempPath.endsWith(",")){
-                path = tempPath.substring(0, tempPath.length() - 1);
+                model.path = tempPath.substring(0, tempPath.length() - 1);
             }else{
-                path = tempPath;
+                model.path = tempPath;
             }
             return model;
         }

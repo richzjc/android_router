@@ -6,7 +6,7 @@ publish {
     userOrg = 'richzjc'
     groupId = 'com.richzjc'
     artifactId = 'router_lib'
-    publishVersion = '1.0.2'
+    publishVersion = '1.0.5'
     desc = '路由库'
     website = 'https://github.com/novoda/bintray-release'
 }
@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly 'androidx.appcompat:appcompat:1.1.0-beta01'
-    api 'com.richzjc:router_annotation:1.0.2'
+    api 'com.richzjc:router_annotation:1.0.5'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "io.reactivex.rxjava2:rxjava:2.1.14"
 }
