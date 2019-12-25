@@ -11,7 +11,6 @@ public class TestInterceptor implements Interceptor {
         String url = chain.url();
         Log.i("TestInterceptor", "准备处理请求:" + url);
         RouterParams params = chain.proceed(url);
-        Log.i("TestInterceptor", "获取路由结果:" + params.getRouterOptions().getOpenClass().getCanonicalName());
         return params;
     }
 }

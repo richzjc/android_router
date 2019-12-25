@@ -215,6 +215,22 @@ public class Router {
             if(IS_FRAGMENT_ROUTER){
                 Log.i("fragmentUrl", url);
                 String FRAGMENT_ROUTER_PATH = options.getDefaultParams().getString(Const.FRAGMENT_ROUTER_PATH, "");
+                String[] paths = FRAGMENT_ROUTER_PATH.split(",");
+                if(paths.length > 0){
+                    String lastPath = paths[paths.length - 1];
+                    Uri parsedUri = Uri.parse(lastPath);
+                    String urlPath = TextUtils.isEmpty(parsedUri.getPath()) ? "" : parsedUri.getPath().substring(1);
+                    parsedUri = Uri.parse(url);
+                    String realPath = TextUtils.isEmpty(parsedUri.getPath()) ? "" : parsedUri.getPath().substring(1);
+                    int index = lastPath.lastIndexOf(urlPath);
+                    lastPath = lastPath.substring(0, index) + realPath;
+                    StringBuilder builder = new StringBuilder();
+                    for(int i = 0; i < paths.length - 1; i++){
+                        builder.append(paths[i]).append(",");
+                    }
+                    builder.append(lastPath);
+                    FRAGMENT_ROUTER_PATH = builder.toString();
+                }
                 if(extras == null)
                     extras = new Bundle();
                 extras.putString(Const.FRGMENT_ROUTER, FRAGMENT_ROUTER_PATH);
