@@ -7,26 +7,21 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TabHost;
-
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-
 import com.kronos.router.fragment.FragmentRouter;
-import com.kronos.router.fragment.FragmentRouterManager;
 import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
 import com.kronos.router.utils.ReflectUtil;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Predicate;
@@ -44,9 +39,8 @@ public class RouterInject {
 
     private static IActivityInject getActivityInject(FragmentActivity activity, Bundle bundle) {
         if (activity instanceof IActivityInject && bundle != null) {
-            String fragmentUrl = bundle.getString(Const.FRGMENT_ROUTER, "");
+            String path = bundle.getString(Const.FRGMENT_ROUTER, "");
             String activityUrl = bundle.getString(Const.ACTIVITY_ROUTER, "");
-            String path = FragmentRouterManager.getInstance().getFragmentRouterPath(activityUrl, fragmentUrl);
             if (!TextUtils.isEmpty(path)) {
                 int index = -1;
                 String nextFragmentUrl = "";

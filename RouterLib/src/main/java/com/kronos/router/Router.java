@@ -10,25 +10,20 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.kronos.router.exception.ContextNotProvided;
-import com.kronos.router.exception.NotInitException;
-import com.kronos.router.exception.RouteNotFoundException;
-import com.kronos.router.fragment.FragmentRouterManager;
 import com.kronos.router.interceptor.RealCall;
 import com.kronos.router.model.FragmentRouterModel;
 import com.kronos.router.model.HostParams;
 import com.kronos.router.model.RouterOptions;
 import com.kronos.router.model.RouterParams;
-import com.kronos.router.utils.RouterUtils;
+import com.kronos.router.utils.Const;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -62,6 +57,48 @@ public class Router {
     public void attachApplication(Application context) {
         this._context = context;
         loader.attach(context);
+        context.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+                Bundle bundle = activity.getIntent().getExtras();
+                if(bundle != null){
+                    String fragmentRouter =  bundle.getString(Const.FRGMENT_ROUTER, "");
+                    if(!TextUtils.isEmpty(fragmentRouter) && activity instanceof FragmentActivity){
+                        RouterInject.inject((FragmentActivity) activity, activity.getIntent());
+                    }
+                }
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+
+            }
+        });
     }
 
     private Application getContext() {
@@ -84,7 +121,16 @@ public class Router {
 
     public static void map(String url, Class<? extends Activity> mClass, FragmentRouterModel... fragmentRouterModels){
         map(url, mClass);
-        FragmentRouterManager.getInstance().put(url, fragmentRouterModels);
+        RouterOptions routerOptions;
+        Bundle bundle;
+        for(FragmentRouterModel routerModel : fragmentRouterModels){
+            routerOptions = new RouterOptions();
+            bundle = new Bundle();
+            bundle.putBoolean(Const.IS_FRAGMENT_ROUTER, true);
+            bundle.putString(Const.FRAGMENT_ROUTER_PATH, routerModel.path);
+            routerOptions.setDefaultParams(bundle);
+            map(routerModel.fragmentRouterUrl, mClass, routerOptions);
+        }
     }
 
     public static void map(String url, Class<? extends Activity> mClass, @Nullable Class<? extends Fragment> targetFragment,
@@ -162,6 +208,17 @@ public class Router {
             RouterContext routeContext = new RouterContext(params.getOpenParams(), extras, context);
             options.getCallback().run(routeContext);
             return;
+        }
+
+        if(options.getDefaultParams() != null){
+            boolean IS_FRAGMENT_ROUTER = options.getDefaultParams().getBoolean(Const.IS_FRAGMENT_ROUTER, false);
+            if(IS_FRAGMENT_ROUTER){
+                Log.i("fragmentUrl", url);
+                String FRAGMENT_ROUTER_PATH = options.getDefaultParams().getString(Const.FRAGMENT_ROUTER_PATH, "");
+                if(extras == null)
+                    extras = new Bundle();
+                extras.putString(Const.FRGMENT_ROUTER, FRAGMENT_ROUTER_PATH);
+            }
         }
 
         Intent intent = this.intentFor(context, params);
