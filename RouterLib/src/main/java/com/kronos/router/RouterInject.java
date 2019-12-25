@@ -30,17 +30,16 @@ public class RouterInject {
 
     public static void inject(FragmentActivity activity, Intent intent) {
         Bundle bundle = intent.getExtras();
-        IActivityInject inject = getActivityInject(activity, bundle);
+        getActivityInject(activity, bundle);
         int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
-        if (inject != null && index >= 0) {
+        if (index >= 0) {
             setCurrentItem(activity, bundle);
         }
     }
 
-    private static IActivityInject getActivityInject(FragmentActivity activity, Bundle bundle) {
-        if (activity instanceof IActivityInject && bundle != null) {
+    private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
+        if (activity != null && bundle != null) {
             String path = bundle.getString(Const.FRGMENT_ROUTER, "");
-            String activityUrl = bundle.getString(Const.ACTIVITY_ROUTER, "");
             if (!TextUtils.isEmpty(path)) {
                 int index = -1;
                 String nextFragmentUrl = "";
@@ -58,10 +57,8 @@ public class RouterInject {
                 }
                 bundle.putInt(Const.FRAGMENT_INDEX, index);
                 bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl);
-                return (IActivityInject) activity;
             }
         }
-        return null;
     }
 
     private static String getNextFragmentRouter(String[] paths) {
@@ -172,15 +169,15 @@ public class RouterInject {
 
 
     public static void inject(Fragment fragment, Bundle bundle) {
-        IFragmentInject inject = getFragmentInject(fragment, bundle);
+        getFragmentInject(fragment, bundle);
         int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
-        if (inject != null && index >= 0) {
+        if (index >= 0) {
             setCurrentItem(fragment, bundle);
         }
     }
 
-    private static IFragmentInject getFragmentInject(Fragment fragment, Bundle bundle) {
-        if (fragment instanceof IFragmentInject && bundle != null) {
+    private static void getFragmentInject(Fragment fragment, Bundle bundle) {
+        if (fragment != null && bundle != null) {
             String path = bundle.getString(Const.FRGMENT_ROUTER, "");
             if (!TextUtils.isEmpty(path)) {
                 int index = -1;
@@ -199,10 +196,8 @@ public class RouterInject {
                 }
                 bundle.putInt(Const.FRAGMENT_INDEX, index);
                 bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl);
-                return (IFragmentInject) fragment;
             }
         }
-        return null;
     }
 
     private static List<String> getListRouters(Fragment obj) {
