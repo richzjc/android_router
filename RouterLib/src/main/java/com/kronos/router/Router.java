@@ -221,7 +221,9 @@ public class Router {
                     Uri parsedUri = Uri.parse(lastPath);
                     String urlPath = TextUtils.isEmpty(parsedUri.getPath()) ? "" : parsedUri.getPath().substring(1);
                     parsedUri = Uri.parse(url);
-                    String realPath = TextUtils.isEmpty(parsedUri.getPath()) ? "" : parsedUri.getPath().substring(1);
+                    String host = parsedUri.getHost();
+                    int hostIndex = url.indexOf(host);
+                    String realPath = url.substring(hostIndex + host.length() + 1);
                     int index = lastPath.lastIndexOf(urlPath);
                     lastPath = lastPath.substring(0, index) + realPath;
                     StringBuilder builder = new StringBuilder();

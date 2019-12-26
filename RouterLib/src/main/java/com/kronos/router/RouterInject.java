@@ -4,37 +4,59 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TabHost;
+
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
 import com.kronos.router.fragment.FragmentRouter;
 import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
 import com.kronos.router.utils.ReflectUtil;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 
 public class RouterInject {
 
-    public static void inject(FragmentActivity activity, Intent intent) {
-        Bundle bundle = intent.getExtras();
-        getActivityInject(activity, bundle);
-        int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
-        if (index >= 0) {
-            setCurrentItem(activity, bundle);
-        }
+    public static void inject(final FragmentActivity activity, Intent intent) {
+        Observable.just(intent)
+                .map(new Function<Intent, Bundle>() {
+                    @Override
+                    public Bundle apply(Intent intent) throws Exception {
+                        Bundle bundle = intent.getExtras();
+                        getActivityInject(activity, bundle);
+                        return bundle;
+                    }
+                })
+                .doOnNext(new Consumer<Bundle>() {
+                    @Override
+                    public void accept(Bundle bundle) throws Exception {
+                        int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
+                        if (index >= 0) {
+                            setCurrentItem(activity, bundle);
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribe();
     }
 
     private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
@@ -131,10 +153,32 @@ public class RouterInject {
     private static void getViewPagerRouters(ViewPager viewPager, String fieldName, List<String> routers) {
         PagerAdapter pagerAdapter = viewPager.getAdapter();
         if (pagerAdapter != null) {
-            try {
-                Field field = pagerAdapter.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                List list = (List) field.get(pagerAdapter);
+            getAllRouters(fieldName, routers, pagerAdapter);
+        } else {
+            int i = 0;
+            while (viewPager.getAdapter() == null && i < 100) {
+                SystemClock.sleep(50);
+                i++;
+            }
+            if (viewPager.getAdapter() != null) {
+                getAllRouters(fieldName, routers, viewPager.getAdapter());
+            }
+        }
+    }
+
+    private static void getAllRouters(String fieldName, List<String> routers, PagerAdapter pagerAdapter) {
+        try {
+            Field field = pagerAdapter.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            List list = (List) field.get(pagerAdapter);
+            if (list == null || list.size() <= 0){
+                int i = 0;
+                while ((list == null || list.size() <= 0) && i < 100) {
+                    SystemClock.sleep(50);
+                    i++;
+                }
+            }
+
                 for (Object obj : list) {
                     if (obj instanceof IFragmentRouter) {
                         String url = ((IFragmentRouter) obj).getFragmentRouter();
@@ -147,9 +191,8 @@ public class RouterInject {
                         parseAnnotation(obj, routers);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -206,14 +249,14 @@ public class RouterInject {
         if (fragmentRouters != null) {
             int type = fragmentRouters.fragmentType();
             if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
-                View view = obj.getView().findViewById(ReflectUtil.getId(obj.getContext(), "id", fragmentRouters.widgetIdName()));
+                View view = getFragmentView(fragmentRouters.widgetIdName(), obj);
                 if (!(view instanceof TabHost)) {
                     throw new IllegalArgumentException("该控件不属于TabHost");
                 } else {
                     getTabHostRouters((TabHost) view, routers);
                 }
             } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
-                View view = obj.getView().findViewById(ReflectUtil.getId(obj.getContext(), "id", fragmentRouters.widgetIdName()));
+                View view = getFragmentView(fragmentRouters.widgetIdName(), obj);
                 if (!(view instanceof ViewPager)) {
                     throw new IllegalArgumentException("该控件不属于ViewPager");
                 } else {
@@ -235,7 +278,7 @@ public class RouterInject {
             if (obj instanceof Activity)
                 view = ((Activity) obj).findViewById(ReflectUtil.getId((Context) obj, "id", fragmentRouters.widgetIdName()));
             else if (obj instanceof Fragment)
-                view = ((Fragment) obj).getView().findViewById(ReflectUtil.getId(((Fragment) obj).getContext(), "id", fragmentRouters.widgetIdName()));
+                view = getFragmentView(fragmentRouters.widgetIdName(), (Fragment) obj);
         }
 
         if (view instanceof TabHost) {
@@ -245,6 +288,17 @@ public class RouterInject {
             ((ViewPager) view).setCurrentItem(index);
             getViewPagerFragment((ViewPager) view, fragmentRouters.filedName(), bundle);
         }
+    }
+
+    private static View getFragmentView(String widgetIdName, Fragment fragment) {
+        View view;
+        int i = 0;
+        while (fragment.getView() == null && i < 100) {
+            SystemClock.sleep(50);
+            i++;
+        }
+        view = fragment.getView().findViewById(ReflectUtil.getId(fragment.getContext(), "id", widgetIdName));
+        return view;
     }
 
     private static void getTabHostFragment(TabHost host, final Bundle bundle) {
@@ -262,7 +316,7 @@ public class RouterInject {
                     Object fragment = fragmentField.get(tabInfo);
                     if (fragment != null) {
                         inject((Fragment) fragment, bundle);
-                    }else{
+                    } else {
                         Observable.interval(100, TimeUnit.MILLISECONDS)
                                 .takeUntil(new Predicate<Long>() {
                                     @Override
@@ -274,7 +328,7 @@ public class RouterInject {
                                     @Override
                                     public void run() throws Exception {
                                         Object obj = fragmentField.get(tabInfo);
-                                        if(obj != null)
+                                        if (obj != null)
                                             inject((Fragment) obj, bundle);
                                     }
                                 })
