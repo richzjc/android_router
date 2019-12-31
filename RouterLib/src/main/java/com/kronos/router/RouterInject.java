@@ -12,24 +12,20 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-
 import com.kronos.router.fragment.FragmentRouter;
 import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
 import com.kronos.router.utils.ReflectUtil;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Action;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
