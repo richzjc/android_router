@@ -1,3 +1,6 @@
+#  详细使用教程请参考简书
+[简书地址](https://www.jianshu.com/p/9f60ee8297d3)
+
 # AndroidRouter
 It's an Android Route Library. You can just add some Annotation to add you router path.
 ## Usage
