@@ -73,8 +73,76 @@ public class RouterInject {
 
     private static boolean checkIsReady(Activity activity) {
         View content = activity.findViewById(android.R.id.content);
-        return (content != null) && ((ViewGroup)content).getChildCount() > 0;
+        if ((content == null) || ((ViewGroup)content).getChildCount() <= 0)
+            return false;
+        else {
+            SubFragmentRouters fragmentRouters = activity.getClass().getAnnotation(SubFragmentRouters.class);
+            if (fragmentRouters == null)
+                return true;
+            else {
+                int type = fragmentRouters.fragmentType();
+                if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
+                    return isReadyTabHost(activity, fragmentRouters);
+                } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
+                    return isReadyViewPager(activity, fragmentRouters);
+                } else {
+                    return true;
+                }
+            }
+        }
     }
+
+    private static boolean isReadyViewPager(Activity activity, SubFragmentRouters fragmentRouters) {
+        View view = activity.findViewById(ReflectUtil.getId(activity, "id", fragmentRouters.widgetIdName()));
+        if (!(view instanceof ViewPager)) {
+            return true;
+        } else {
+            PagerAdapter pagerAdapter = ((ViewPager) view).getAdapter();
+            if (pagerAdapter != null) {
+                try {
+                    Field field = pagerAdapter.getClass().getDeclaredField(fragmentRouters.filedName());
+                    field.setAccessible(true);
+                    List list = (List) field.get(pagerAdapter);
+                    if (list != null && list.size() > 0)
+                        return true;
+                    else
+                        return false;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return true;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+
+
+    private static boolean isReadyTabHost(Activity activity, SubFragmentRouters fragmentRouters) {
+        View view = activity.findViewById(ReflectUtil.getId(activity, "id", fragmentRouters.widgetIdName()));
+        if (!(view instanceof TabHost)) {
+            return true;
+        } else {
+            try {
+                Method method = view.getClass().getDeclaredMethod("getTabs");
+                if (method != null) {
+                    method.setAccessible(true);
+                    Object obj = method.invoke(view);
+                    if (obj instanceof List && ((List) obj).size() > 0) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+
 
     private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
         if (activity != null && bundle != null) {
