@@ -12,17 +12,20 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
 import com.kronos.router.fragment.FragmentRouter;
 import com.kronos.router.fragment.IFragmentRouter;
 import com.kronos.router.fragment.SubFragmentRouters;
 import com.kronos.router.fragment.SubFragmentType;
 import com.kronos.router.utils.Const;
 import com.kronos.router.utils.ReflectUtil;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Action;
@@ -30,13 +33,46 @@ import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 public class RouterInject {
-    public static void inject(final FragmentActivity activity, Intent intent) {
+    public static void inject(final FragmentActivity activity, final Intent intent) {
+        boolean isReady = checkIsReady(activity);
+        if (isReady) {
+            realInjectActivity(activity, intent);
+        } else {
+            Observable.interval(100, TimeUnit.MILLISECONDS)
+                    .takeUntil(new Predicate<Long>() {
+                        @Override
+                        public boolean test(Long aLong) throws Exception {
+                            return checkIsReady(activity) || aLong > 100;
+                        }
+                    }).subscribeOn(Schedulers.io())
+                    .subscribeOn(AndroidSchedulers.mainThread())
+                    .doFinally(new Action() {
+                        @Override
+                        public void run() throws Exception {
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    realInjectActivity(activity, intent);
+                                }
+                            });
+                        }
+                    })
+                    .subscribe();
+        }
+    }
+
+    private static void realInjectActivity(FragmentActivity activity, Intent intent) {
         Bundle bundle = intent.getExtras();
         getActivityInject(activity, bundle);
         int index = bundle.getInt(Const.FRAGMENT_INDEX, -1);
         if (index >= 0) {
             setCurrentItem(activity, bundle);
         }
+    }
+
+    private static boolean checkIsReady(Activity activity) {
+        View content = activity.findViewById(android.R.id.content);
+        return content != null;
     }
 
     private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
@@ -186,7 +222,7 @@ public class RouterInject {
                     .doFinally(new Action() {
                         @Override
                         public void run() throws Exception {
-                            if(fragment.getActivity() != null) {
+                            if (fragment.getActivity() != null) {
                                 fragment.getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
