@@ -5,7 +5,7 @@ apply plugin: 'java-library'
 //    userOrg = 'richzjc'
 //    groupId = 'com.richzjc'
 //    artifactId = 'router_annotation'
-//    publishVersion = '1.0.21'
+//    publishVersion = '1.0.22'
 //    desc = '路由库'
 //    website = 'https://github.com/novoda/bintray-release'
 //}

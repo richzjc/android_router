@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TabHost;
 
 import androidx.fragment.app.Fragment;
@@ -72,7 +73,7 @@ public class RouterInject {
 
     private static boolean checkIsReady(Activity activity) {
         View content = activity.findViewById(android.R.id.content);
-        return content != null;
+        return (content != null) && ((ViewGroup)content).getChildCount() > 0;
     }
 
     private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
