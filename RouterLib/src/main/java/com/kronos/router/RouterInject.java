@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TabHost;
@@ -33,7 +34,9 @@ import io.reactivex.functions.Action;
 import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
+
 public class RouterInject {
+    public static String TAG = "RouterInject";
     public static void inject(final FragmentActivity activity, final Intent intent) {
         boolean isReady = checkIsReady(activity);
         if (isReady) {
@@ -147,21 +150,26 @@ public class RouterInject {
     private static void getActivityInject(FragmentActivity activity, Bundle bundle) {
         if (activity != null && bundle != null) {
             String path = bundle.getString(Const.FRGMENT_ROUTER, "");
+            Log.i(TAG, "path = " + path);
             if (!TextUtils.isEmpty(path)) {
                 int index = -1;
                 String nextFragmentUrl = "";
                 String[] paths = path.split(",");
                 if (paths.length > 0) {
                     String subRouterUrl = paths[0];
+                    Log.i(TAG, "firstRouter = " + subRouterUrl);
                     List<String> routers = getListRouters(activity);
                     for (int i = 0; i < routers.size(); i++) {
                         if (TextUtils.equals(subRouterUrl, routers.get(i))) {
+                            Log.i(TAG, "getActivityInject for = " + routers.get(i));
                             index = i;
                             nextFragmentUrl = getNextFragmentRouter(paths);
                             break;
                         }
                     }
                 }
+                Log.i(TAG, "FRAGMENT_INDEX = " + index);
+                Log.i(TAG, "FRGMENT_ROUTER = " + nextFragmentUrl);
                 bundle.putInt(Const.FRAGMENT_INDEX, index);
                 bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl);
             }
