@@ -160,8 +160,8 @@ public class RouterInject {
                     Log.i(TAG, "firstRouter = " + subRouterUrl);
                     List<String> routers = getListRouters(activity);
                     for (int i = 0; i < routers.size(); i++) {
+                        Log.i(TAG, "getActivityInject for = " + routers.get(i));
                         if (TextUtils.equals(subRouterUrl, routers.get(i))) {
-                            Log.i(TAG, "getActivityInject for = " + routers.get(i));
                             index = i;
                             nextFragmentUrl = getNextFragmentRouter(paths);
                             break;
@@ -205,6 +205,7 @@ public class RouterInject {
                 if (!(view instanceof ViewPager)) {
                     throw new IllegalArgumentException("该控件不属于ViewPager");
                 } else {
+                    Log.i(TAG, "getViewPagerRouters   "  + fragmentRouters.filedName());
                     getViewPagerRouters((ViewPager) view, fragmentRouters.filedName(), routers);
                 }
             } else {
@@ -250,9 +251,11 @@ public class RouterInject {
                 Field field = pagerAdapter.getClass().getDeclaredField(fieldName);
                 field.setAccessible(true);
                 List list = (List) field.get(pagerAdapter);
+                Log.i(TAG, "list.size =    "  + list.size());
                 for (Object obj : list) {
                     if (obj instanceof IFragmentRouter) {
                         String url = ((IFragmentRouter) obj).getFragmentRouter();
+                        Log.i(TAG, "url =    "  + url);
                         if (!TextUtils.isEmpty(url)) {
                             routers.add(url);
                         } else {
@@ -269,6 +272,7 @@ public class RouterInject {
     }
 
     private static void parseAnnotation(Object obj, List<String> routers) {
+        Log.i(TAG, "parseAnnotation");
         FragmentRouter fragmentRouter = obj.getClass().getAnnotation(FragmentRouter.class);
         if (fragmentRouter != null) {
             String url = fragmentRouter.url();
