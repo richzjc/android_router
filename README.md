@@ -8,8 +8,8 @@ Add this line to your `build.gradle` file under your module directory.
 
 ```
 dependencies {
-    compile 'com.github.leifzhang:routerLib:0.4.1'
-    annotationProcessor "com.github.leifzhang:compiler:0.4.1"
+    compile 'com.richzjc:router_lib:1.0.25'
+    annotationProcessor "com.richzjc:router_compiler:1.0.25"
 }
 ```
 # First Step
@@ -35,14 +35,6 @@ public class SimpleCallBack implements RouterCallback {
     public void run(RouterContext context) {
         Toast.makeText(context.getContext(), "testing", Toast.LENGTH_SHORT).show();
     }
-}
-```
-# Second Step
-Each module need a Annotation just call `BindModule`
-```java
-@BindModule("app")
-public class Module {
-
 }
 ```
 
