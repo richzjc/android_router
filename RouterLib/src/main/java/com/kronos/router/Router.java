@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.kronos.router.RouterInjectKt.inject;
+
 public class Router {
 
     private static Router _router;
@@ -64,7 +66,7 @@ public class Router {
                 if(bundle != null){
                     String fragmentRouter =  bundle.getString(Const.FRGMENT_ROUTER, "");
                     if(!TextUtils.isEmpty(fragmentRouter) && activity instanceof FragmentActivity){
-                        RouterInject.inject((FragmentActivity) activity, activity.getIntent());
+                        inject((FragmentActivity) activity, activity.getIntent());
                     }
                 }
             }
