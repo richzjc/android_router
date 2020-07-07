@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TabHost
@@ -22,11 +23,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
+const val TAG = "RouterInject"
 fun inject(activity: FragmentActivity?, intent: Intent?) {
     activity ?: return
 
     MainScope().launch {
         val isReady = checkIsReady(activity)
+        Log.i(TAG, "InjectActivity")
         if (isReady)
             realInjectActivity(activity, intent)
         else {
@@ -43,6 +46,7 @@ fun inject(activity: FragmentActivity?, intent: Intent?) {
 }
 
 private suspend fun realInjectActivity(activity: FragmentActivity, intent: Intent?) {
+    Log.i(TAG, "realInjectActivity")
     val bundle = intent?.extras
     getActivityInject(activity, bundle)
     val index = bundle?.getInt(Const.FRAGMENT_INDEX, -1) ?: -1
@@ -143,44 +147,44 @@ private suspend fun getFragmentInject(fragment: Fragment?, bundle: Bundle?) {
     if (fragment != null && bundle != null) {
         val path = bundle.getString(Const.FRGMENT_ROUTER, "")
         if (!TextUtils.isEmpty(path)) {
+
             var index = -1
             var nextFragmentUrl: String? = ""
             val paths = path.split(",").toTypedArray()
             if (paths.isNotEmpty()) {
                 val subRouterUrl = paths[0]
-                val routers = getListRouters(fragment)
-                for (i in routers!!.indices) {
-                    if (TextUtils.equals(subRouterUrl, routers[i])) {
-                        index = i
-                        nextFragmentUrl = getNextFragmentRouter(paths)
-                        break
-                    }
-                }
+                index = getListRouters(fragment, subRouterUrl)
+                nextFragmentUrl = getNextFragmentRouter(paths)
             }
             bundle.putInt(Const.FRAGMENT_INDEX, index)
             bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl)
+            Log.i(TAG, nextFragmentUrl)
         }
     }
 }
 
-private suspend fun getListRouters(obj: Fragment): List<String>? {
-    val routers = mutableListOf<String>()
+private suspend fun getListRouters(obj: Fragment, subRouterUrl : String?): Int {
+    var index = -1
     val fragmentRouters = obj.javaClass.getAnnotation(SubFragmentRouters::class.java)
     if (fragmentRouters != null) {
         val type: Int = fragmentRouters.fragmentType
-        if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
-            val view = obj.view!!.findViewById<View>(ReflectUtil.getId(obj.context, "id", fragmentRouters.widgetIdName))
-            require(view is TabHost) { "该控件不属于TabHost" }
-            getTabHostRouters(view, routers)
-        } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
-            val view = obj.view!!.findViewById<View>(ReflectUtil.getId(obj.context, "id", fragmentRouters.widgetIdName))
-            require(view is ViewPager) { "该控件不属于ViewPager" }
-            getViewPagerRouters(view, fragmentRouters.filedName, routers)
-        } else {
-            throw java.lang.IllegalArgumentException("传入的fragmentType 目前不支持")
+        when (type) {
+            SubFragmentType.TABHOST_FRRAGMENTS -> {
+                val view = obj.view!!.findViewById<View>(ReflectUtil.getId(obj.context, "id", fragmentRouters.widgetIdName))
+                require(view is TabHost) { "该控件不属于TabHost" }
+                index = getTabHostRouters(view, subRouterUrl)
+            }
+            SubFragmentType.VIEWPAGER_FRAGMENTS -> {
+                val view = obj.view!!.findViewById<View>(ReflectUtil.getId(obj.context, "id", fragmentRouters.widgetIdName))
+                require(view is ViewPager) { "该控件不属于ViewPager" }
+                index = getViewPagerRouters(view, fragmentRouters.filedName, subRouterUrl)
+            }
+            else -> {
+                throw IllegalArgumentException("传入的fragmentType 目前不支持")
+            }
         }
     }
-    return routers
+    return index
 }
 
 private fun checkIsReady(fragment: Fragment?): Boolean {
@@ -246,6 +250,7 @@ private fun isReadyTabHost(fragment: Fragment, fragmentRouters: SubFragmentRoute
 }
 
 private suspend fun getActivityInject(activity: FragmentActivity?, bundle: Bundle?) {
+    Log.i(TAG, "getActivityInject")
     if (activity != null && bundle != null) {
         val path = bundle.getString(Const.FRGMENT_ROUTER, "")
         if (!TextUtils.isEmpty(path)) {
@@ -254,17 +259,12 @@ private suspend fun getActivityInject(activity: FragmentActivity?, bundle: Bundl
             val paths = path.split(",").toTypedArray()
             if (paths.isNotEmpty()) {
                 val subRouterUrl = paths[0]
-                val routers = getListRouters(activity)
-                for (i in routers!!.indices) {
-                    if (TextUtils.equals(subRouterUrl, routers[i])) {
-                        index = i
-                        nextFragmentUrl = getNextFragmentRouter(paths)
-                        break
-                    }
-                }
+                index = getListRouters(activity, subRouterUrl)
+                nextFragmentUrl = getNextFragmentRouter(paths)
             }
             bundle.putInt(Const.FRAGMENT_INDEX, index)
             bundle.putString(Const.FRGMENT_ROUTER, nextFragmentUrl)
+            Log.i(TAG, nextFragmentUrl)
         }
     }
 }
@@ -280,106 +280,118 @@ private fun getNextFragmentRouter(paths: Array<String>): String? {
     } else value
 }
 
-private suspend fun getListRouters(obj: Activity): List<String>? {
-    val routers = mutableListOf<String>()
+private suspend fun getListRouters(obj: Activity, subRouterUrl : String?): Int {
+    var index = -1
     val fragmentRouters = obj.javaClass.getAnnotation(SubFragmentRouters::class.java)
     if (fragmentRouters != null) {
         val type: Int = fragmentRouters.fragmentType
-        if (type == SubFragmentType.TABHOST_FRRAGMENTS) {
-            val view = obj.findViewById<View>(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName))
-            require(view is TabHost) { "该控件不属于TabHost" }
-            getTabHostRouters(view, routers)
-        } else if (type == SubFragmentType.VIEWPAGER_FRAGMENTS) {
-            val view = obj.findViewById<View>(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName))
-            require(view is ViewPager) { "该控件不属于ViewPager" }
-            getViewPagerRouters(view, fragmentRouters.filedName, routers)
-        } else {
-            throw IllegalArgumentException("传入的fragmentType 目前不支持")
+        when (type) {
+            SubFragmentType.TABHOST_FRRAGMENTS -> {
+                val view = obj.findViewById<View>(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName))
+                require(view is TabHost) { "该控件不属于TabHost" }
+                Log.i(TAG, "getListRouters tabHost")
+                index = getTabHostRouters(view, subRouterUrl)
+            }
+            SubFragmentType.VIEWPAGER_FRAGMENTS -> {
+                val view = obj.findViewById<View>(ReflectUtil.getId(obj, "id", fragmentRouters.widgetIdName))
+                require(view is ViewPager) { "该控件不属于ViewPager" }
+                Log.i(TAG, "getListRouters viewPager")
+                index = getViewPagerRouters(view, fragmentRouters.filedName, subRouterUrl)
+            }
+            else -> {
+                throw IllegalArgumentException("传入的fragmentType 目前不支持")
+            }
         }
     }
-    return routers
+    return index
 }
 
-private fun getViewPagerRouters(viewPager: ViewPager, fieldName: String, routers: MutableList<String>) {
+private fun getViewPagerRouters(viewPager: ViewPager, fieldName: String, subRouterUrl: String?) : Int{
+    var index = -1
     val pagerAdapter = viewPager.adapter
     if (pagerAdapter != null) {
         try {
             val field = pagerAdapter.javaClass.getDeclaredField(fieldName)
             field.isAccessible = true
             val list = field[pagerAdapter] as List<*>
-            for (obj in list) {
+            list.forEachIndexed{innerIndex, obj ->
                 if (obj is IFragmentRouter) {
                     val url = obj.getFragmentRouter()
-                    if (!TextUtils.isEmpty(url)) {
-                        routers.add(url!!)
+                    if (!TextUtils.isEmpty(url) && TextUtils.equals(url, subRouterUrl)) {
+                        index = innerIndex
+                        return@forEachIndexed
                     } else {
-                        parseAnnotation(obj, routers)
+                        if(parseAnnotation(obj, subRouterUrl)){
+                            index = innerIndex
+                            return@forEachIndexed
+                        }
                     }
                 } else {
-                    parseAnnotation(obj!!, routers)
+                    if(parseAnnotation(obj!!, subRouterUrl)){
+                        index = innerIndex
+                        return@forEachIndexed
+                    }
                 }
             }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
         }
     }
+    return index
 }
 
-private fun parseAnnotation(obj: Any, routers: MutableList<String>) {
+private fun parseAnnotation(obj: Any, subRouterUrl: String?) : Boolean{
     val fragmentRouter = obj.javaClass.getAnnotation(FragmentRouter::class.java)
     if (fragmentRouter != null) {
-        val url: String = fragmentRouter.url
-        if (!TextUtils.isEmpty(url)) {
-            routers.add(url)
-        } else {
-            routers.add("")
-        }
-    } else {
-        routers.add("")
-    }
+        return TextUtils.equals(fragmentRouter.url, subRouterUrl)
+    }else
+        return false
 }
 
-private suspend fun getTabHostRouters(host: TabHost, routers: MutableList<String>) {
+private suspend fun getTabHostRouters(host: TabHost, subRouterUrl: String?) : Int{
+    var index = -1
     try {
         val method = host.javaClass.getDeclaredMethod("getTabs")
         if (method != null) {
             method.isAccessible = true
             val obj = method.invoke(host)
             if (obj != null && obj is List<*>) {
-                for (tabInfoObj in obj) {
-                    waitFragmentRouter(tabInfoObj!!, routers)
+                obj.forEachIndexed  { innerIndex, tabInfoObj ->
+                    val flag = waitFragmentRouter(tabInfoObj!!, subRouterUrl)
+                    if(flag) {
+                        index = innerIndex
+                        return@forEachIndexed
+                    }
                 }
             }
         }
     } catch (e: java.lang.Exception) {
         e.printStackTrace()
     }
+    return index
 }
 
-private suspend fun waitFragmentRouter(tabInfoObj: Any, routers: MutableList<String>) {
+private suspend fun waitFragmentRouter(tabInfoObj: Any, subRouterUrl: String?) : Boolean{
     val fragmentField = tabInfoObj!!::class.java.getDeclaredField("fragment")
     fragmentField.isAccessible = true
     val fragment = fragmentField[tabInfoObj]
     if (fragment != null) {
-        if (fragment is IFragmentRouter)
-            routers.add(fragment.getFragmentRouter() ?: "")
+        return if (fragment is IFragmentRouter && !TextUtils.isEmpty(fragment.getFragmentRouter()))
+            TextUtils.equals(fragment.getFragmentRouter(), subRouterUrl)
         else
-            parseAnnotation(fragment, routers)
+            parseAnnotation(fragment, subRouterUrl)
     } else {
         var flagIndex = 0
         do {
             delay(100)
             flagIndex += 1
-        } while (!(fragmentField[tabInfoObj] != null || flagIndex > 100))
+        } while (!(fragmentField[tabInfoObj] != null || flagIndex > 5))
 
         val fragment = fragmentField[tabInfoObj]
-        if (fragment != null) {
-            if (fragment is IFragmentRouter)
-                routers.add(fragment.getFragmentRouter() ?: "")
-            else
-                parseAnnotation(fragment, routers)
-        } else
-            routers.add("")
+        return if (fragment is IFragmentRouter)
+            TextUtils.equals(fragment.getFragmentRouter(), subRouterUrl)
+        else
+            parseAnnotation(fragment, subRouterUrl)
     }
 }
 
