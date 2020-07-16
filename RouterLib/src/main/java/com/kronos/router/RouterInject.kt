@@ -390,8 +390,9 @@ private suspend fun waitFragmentRouter(tabInfoObj: Any, subRouterUrl: String?) :
         val fragment = fragmentField[tabInfoObj]
         return if (fragment is IFragmentRouter)
             TextUtils.equals(fragment.getFragmentRouter(), subRouterUrl)
-        else
+        else if(fragment != null)
             parseAnnotation(fragment, subRouterUrl)
+        else false
     }
 }
 
