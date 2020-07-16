@@ -21,6 +21,7 @@ import com.kronos.router.utils.ReflectUtil
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.reflect.Field
 import java.util.*
 
 const val TAG = "RouterInject"
@@ -111,7 +112,7 @@ private fun getTabHostFragment(host: TabHost, bundle: Bundle) {
                 }
             }
         }
-    } catch (e: java.lang.Exception) {
+    } catch (e: Exception) {
         e.printStackTrace()
     }
 }
@@ -354,11 +355,20 @@ private suspend fun getTabHostRouters(host: TabHost, subRouterUrl: String?) : In
             method.isAccessible = true
             val obj = method.invoke(host)
             if (obj != null && obj is List<*>) {
+                var field : Field? = null
                 obj.forEachIndexed  { innerIndex, tabInfoObj ->
-                    val flag = parseAnnotation(tabInfoObj!!.javaClass, subRouterUrl)
-                    if(flag) {
-                        index = innerIndex
-                        return@forEachIndexed
+                    if(field == null) {
+                        field = tabInfoObj!!.javaClass.getDeclaredField("clss")
+                        field?.isAccessible = true
+                    }
+                    Log.i(TAG, "getTabHostRouters    parseAnnotation")
+                    val cls = field?.get(tabInfoObj) as? Class<*>
+                    if(cls != null) {
+                        val flag = parseAnnotation(cls, subRouterUrl)
+                        if (flag) {
+                            index = innerIndex
+                            return@forEachIndexed
+                        }
                     }
                 }
 
