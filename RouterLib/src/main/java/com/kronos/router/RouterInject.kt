@@ -315,21 +315,19 @@ private fun getViewPagerRouters(viewPager: ViewPager, fieldName: String, subRout
             field.isAccessible = true
             val list = field[pagerAdapter] as List<*>
             list.forEachIndexed{innerIndex, obj ->
-                if (obj is IFragmentRouter) {
+                if(parseAnnotation(obj!!.javaClass, subRouterUrl)){
+                    index = innerIndex
+                    return@forEachIndexed
+                }else if (obj is IFragmentRouter) {
                     val url = obj.getFragmentRouter()
                     if (!TextUtils.isEmpty(url) && TextUtils.equals(url, subRouterUrl)) {
                         index = innerIndex
                         return@forEachIndexed
                     } else {
-                        if(parseAnnotation(obj, subRouterUrl)){
+                        if(parseAnnotation(obj.javaClass, subRouterUrl)){
                             index = innerIndex
                             return@forEachIndexed
                         }
-                    }
-                } else {
-                    if(parseAnnotation(obj!!, subRouterUrl)){
-                        index = innerIndex
-                        return@forEachIndexed
                     }
                 }
             }
@@ -340,12 +338,12 @@ private fun getViewPagerRouters(viewPager: ViewPager, fieldName: String, subRout
     return index
 }
 
-private fun parseAnnotation(obj: Any, subRouterUrl: String?) : Boolean{
-    val fragmentRouter = obj.javaClass.getAnnotation(FragmentRouter::class.java)
-    if (fragmentRouter != null) {
-        return TextUtils.equals(fragmentRouter.url, subRouterUrl)
+private fun parseAnnotation(cls: Class<*>, subRouterUrl: String?) : Boolean{
+    val fragmentRouter = cls.getAnnotation(FragmentRouter::class.java)
+    return if (fragmentRouter != null) {
+        TextUtils.equals(fragmentRouter.url, subRouterUrl)
     }else
-        return false
+        false
 }
 
 private suspend fun getTabHostRouters(host: TabHost, subRouterUrl: String?) : Int{
@@ -357,10 +355,20 @@ private suspend fun getTabHostRouters(host: TabHost, subRouterUrl: String?) : In
             val obj = method.invoke(host)
             if (obj != null && obj is List<*>) {
                 obj.forEachIndexed  { innerIndex, tabInfoObj ->
-                    val flag = waitFragmentRouter(tabInfoObj!!, subRouterUrl)
+                    val flag = parseAnnotation(tabInfoObj!!.javaClass, subRouterUrl)
                     if(flag) {
                         index = innerIndex
                         return@forEachIndexed
+                    }
+                }
+
+                if(index < 0) {
+                    obj.forEachIndexed { innerIndex, tabInfoObj ->
+                        val flag = waitFragmentRouter(tabInfoObj!!, subRouterUrl)
+                        if (flag) {
+                            index = innerIndex
+                            return@forEachIndexed
+                        }
                     }
                 }
             }
@@ -379,7 +387,7 @@ private suspend fun waitFragmentRouter(tabInfoObj: Any, subRouterUrl: String?) :
         return if (fragment is IFragmentRouter && !TextUtils.isEmpty(fragment.getFragmentRouter()))
             TextUtils.equals(fragment.getFragmentRouter(), subRouterUrl)
         else
-            parseAnnotation(fragment, subRouterUrl)
+            parseAnnotation(fragment.javaClass, subRouterUrl)
     } else {
         var flagIndex = 0
         do {
@@ -391,7 +399,7 @@ private suspend fun waitFragmentRouter(tabInfoObj: Any, subRouterUrl: String?) :
         return if (fragment is IFragmentRouter)
             TextUtils.equals(fragment.getFragmentRouter(), subRouterUrl)
         else if(fragment != null)
-            parseAnnotation(fragment, subRouterUrl)
+            parseAnnotation(fragment.javaClass, subRouterUrl)
         else false
     }
 }
