@@ -7,7 +7,7 @@ apply plugin: 'kotlin-kapt'
 //    userOrg = 'richzjc'
 //    groupId = 'com.richzjc'
 //    artifactId = 'router_compiler'
-//    publishVersion = '1.0.25'
+//    publishVersion = '1.0.26'
 //    desc = '路由库'
 //    website = 'https://github.com/novoda/bintray-release'
 //}
@@ -26,7 +26,7 @@ apply plugin: 'kotlin-kapt'
 dependencies {
     implementation 'com.google.auto.service:auto-service:1.0-rc4'
     implementation 'com.squareup:javapoet:1.10.0'
-    implementation 'com.richzjc:router_annotation:1.0.25'
+    implementation 'com.richzjc:router_annotation:1.0.26'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     kapt "com.google.auto.service:auto-service:1.0-rc4"
 }
