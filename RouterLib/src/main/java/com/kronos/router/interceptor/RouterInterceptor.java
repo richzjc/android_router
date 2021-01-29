@@ -29,11 +29,15 @@ public class RouterInterceptor implements Interceptor {
         String cacheUrl = url;
         int index = url.indexOf("?");
 
-        if(index >= 0){
+        if (index >= 0) {
             cacheUrl = url.substring(0, index);
         }
         if (_cachedRoutes.get(cacheUrl) != null) {
-            return _cachedRoutes.get(cacheUrl);
+            RouterParams params = _cachedRoutes.get(cacheUrl);
+            for (String key : parsedUri.getQueryParameterNames()) {
+                params.getOpenParams().put(key, parsedUri.getQueryParameter(key));
+            }
+            return params;
         }
 
         String[] givenParts = urlPath.split("/");
