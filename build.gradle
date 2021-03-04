@@ -7,10 +7,7 @@ buildscript {
             url 'https://dl.bintray.com/richzjc/maven'
         }
         jcenter()
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
-        }
+        maven {url 'https://dl.google.com/dl/android/maven2/'}
         google()
     }
     dependencies {
@@ -30,7 +27,7 @@ allprojects {
             url 'https://dl.bintray.com/richzjc/maven'
         }
         jcenter()
-        google()
+        maven {url 'https://dl.google.com/dl/android/maven2/'}
     }
 }
 

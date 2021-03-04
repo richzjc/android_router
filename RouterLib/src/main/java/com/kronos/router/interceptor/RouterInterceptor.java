@@ -34,6 +34,7 @@ public class RouterInterceptor implements Interceptor {
         }
         if (_cachedRoutes.get(cacheUrl) != null) {
             RouterParams params = _cachedRoutes.get(cacheUrl);
+            params.getOpenParams().put("targetUrl", url);
             for (String key : parsedUri.getQueryParameterNames()) {
                 params.getOpenParams().put(key, parsedUri.getQueryParameter(key));
             }

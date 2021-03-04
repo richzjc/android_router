@@ -6,7 +6,7 @@ publish {
     userOrg = 'richzjc'
     groupId = 'com.richzjc'
     artifactId = 'router_lib'
-    publishVersion = '1.1.2'
+    publishVersion = '1.1.3'
     desc = '路由库'
     website = 'https://github.com/novoda/bintray-release'
 }
