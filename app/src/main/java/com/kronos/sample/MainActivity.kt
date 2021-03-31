@@ -5,8 +5,9 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import butterknife.ButterKnife
 import butterknife.OnClick
-import com.kronos.router.BindRouter
+import com.kronos.download.DownloadManager
 import com.kronos.router.Router
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,9 +21,12 @@ class MainActivity : AppCompatActivity() {
 
     @OnClick(R.id.routerTesting, R.id.routerBaidu)
     fun onClick(view: View) {
-        when (view.id) {
-            R.id.routerTesting -> Router.sharedRouter().open("https://www.baidu.com/test", this)
-            R.id.routerBaidu -> Router.sharedRouter().open("https://www.baidu.com/test/12345", this)
+        thread {
+            DownloadManager.pause("https://www.baidu.com")
         }
+//        when (view.id) {
+//            R.id.routerTesting -> Router.sharedRouter().open("https://www.baidu.com/test", this)
+//            R.id.routerBaidu -> Router.sharedRouter().open("https://www.baidu.com/test/12345", this)
+//        }
     }
 }
