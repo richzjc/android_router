@@ -245,7 +245,7 @@ object DownloadManager {
         while (mc.find()) {
             suffix = mc.group()//截取文件名后缀名
         }
-        return !TextUtils.isEmpty(suffix) && (TextUtils.equals(suffix, ".m3u8") || TextUtils.equals(suffix, ".M3U8"))
+        return !TextUtils.isEmpty(suffix) && (suffix.endsWith("m3u8") || suffix.endsWith("M3U8"))
     }
 
     fun saveAll() {
