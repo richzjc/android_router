@@ -103,7 +103,9 @@ class DownloadModel : BaseObserveAdapter() {
             fileName = if (TextUtils.isEmpty(fileName)) "未知文件" else fileName
             suffix = ".temp"
         }
-        return if (TextUtils.isEmpty(suffixName)) {
+        return if (!TextUtils.isEmpty(suffix) && (suffix.endsWith("m3u8") || suffix.endsWith("M3U8")))
+            return ".m3u8"
+        else if (TextUtils.isEmpty(suffixName)) {
             suffix
         } else {
             suffixName

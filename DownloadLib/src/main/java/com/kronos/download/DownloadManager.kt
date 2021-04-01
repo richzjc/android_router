@@ -170,7 +170,7 @@ object DownloadManager {
             override fun onDownloadProgress(task: M3U8Task?) {
                 super.onDownloadProgress(task)
                 updateDownloadState(model, task)
-                model?.updateProgress(task?.progress?.toInt() ?: 0)
+                model?.updateProgress((task?.progress?.toInt() ?: 0) * 100)
             }
 
             override fun onDownloadSuccess(task: M3U8Task?) {
