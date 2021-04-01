@@ -43,6 +43,10 @@ class DownloadModel : BaseObserveAdapter() {
             return sdFile
         }
 
+    fun setSdFile(sdFile: String?) {
+        this.sdFile = sdFile
+    }
+
     fun setSuffixName(suffixName: String) {
         this.suffixName = suffixName
     }

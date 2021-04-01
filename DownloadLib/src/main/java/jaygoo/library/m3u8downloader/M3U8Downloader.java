@@ -93,8 +93,6 @@ public class M3U8Downloader {
         }else {
             downLoadQueue.offer(task);
             startDownloadTask(task);
-
-
         }
     }
 

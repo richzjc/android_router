@@ -11,6 +11,7 @@ import jaygoo.library.m3u8downloader.M3U8DownloaderConfig
 import jaygoo.library.m3u8downloader.OnM3U8DownloadListener
 import jaygoo.library.m3u8downloader.bean.M3U8Task
 import jaygoo.library.m3u8downloader.bean.M3U8TaskState
+import jaygoo.library.m3u8downloader.utils.MUtils
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.*
@@ -139,6 +140,7 @@ object DownloadManager {
 
     private fun downloadM3u8(url: String, model: DownloadModel?) {
         model?.state = 0
+        model?.setSdFile("${MUtils.getSaveFileDir(url)}/${url.hashCode()}.m3u8")
         m3u8Downloader?.setOnM3U8DownloadListener(object : OnM3U8DownloadListener() {
             override fun onDownloadError(task: M3U8Task?, errorMsg: Throwable?) {
                 super.onDownloadError(task, errorMsg)

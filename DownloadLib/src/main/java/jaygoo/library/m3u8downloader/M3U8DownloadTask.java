@@ -20,6 +20,7 @@ import jaygoo.library.m3u8downloader.bean.M3U8;
 import jaygoo.library.m3u8downloader.bean.M3U8Ts;
 import jaygoo.library.m3u8downloader.utils.M3U8Log;
 import jaygoo.library.m3u8downloader.utils.MUtils;
+
 /**
  * ================================================
  * 作    者：JayGoo
@@ -36,7 +37,6 @@ class M3U8DownloadTask {
     private OnTaskDownloadListener onTaskDownloadListener;
     //加密Key，默认为空，不加密
     private String encryptKey = null;
-    private String m3u8FileName = "local.m3u8";
     //文件保存的路径
     private String saveDir;
     //当前下载完成的文件个数
@@ -102,7 +102,7 @@ class M3U8DownloadTask {
         }
     });
 
-    public M3U8DownloadTask(){
+    public M3U8DownloadTask() {
         connTimeout = M3U8DownloaderConfig.getConnTimeout();
         readTimeout = M3U8DownloaderConfig.getReadTimeout();
         threadCount = M3U8DownloaderConfig.getThreadCount();
@@ -116,7 +116,7 @@ class M3U8DownloadTask {
      */
     public void download(final String url, OnTaskDownloadListener onTaskDownloadListener) {
         saveDir = MUtils.getSaveFileDir(url);
-        M3U8Log.d("start download ,SaveDir: "+ saveDir);
+        M3U8Log.d("start download ,SaveDir: " + saveDir);
         this.onTaskDownloadListener = onTaskDownloadListener;
         if (!isRunning()) {
             getM3U8Info(url);
@@ -126,11 +126,11 @@ class M3U8DownloadTask {
     }
 
 
-    public void setEncryptKey(String encryptKey){
+    public void setEncryptKey(String encryptKey) {
         this.encryptKey = encryptKey;
     }
 
-    public String getEncryptKey(){
+    public String getEncryptKey() {
         return encryptKey;
     }
 
@@ -149,7 +149,7 @@ class M3U8DownloadTask {
      *
      * @param url
      */
-    private void getM3U8Info(String url) {
+    private void getM3U8Info(final String url) {
 
         M3U8InfoManger.getInstance().getM3U8Info(url, new OnM3U8InfoListener() {
             @Override
@@ -168,6 +168,7 @@ class M3U8DownloadTask {
                                 Thread.sleep(100);
                             }
                             if (isRunning) {
+                                String m3u8FileName = url.hashCode() + ".m3u8";
                                 File m3u8File = MUtils.createLocalM3U8(new File(saveDir), m3u8FileName, currentM3U8);
                                 currentM3U8.setM3u8FilePath(m3u8File.getPath());
                                 currentM3U8.setDirFilePath(saveDir);
@@ -207,6 +208,7 @@ class M3U8DownloadTask {
      * 开始下载
      * 关于断点续传，每个任务会根据url进行生成相应Base64目录
      * 如果任务已经停止、开始下载之前，下一次会判断相关任务目录中已经下载完成的ts文件是否已经下载过了，下载了就不再下载
+     *
      * @param m3U8
      */
     private void startDownload(final M3U8 m3U8) {
@@ -269,7 +271,7 @@ class M3U8DownloadTask {
                             conn.setConnectTimeout(connTimeout);
                             conn.setReadTimeout(readTimeout);
                             if (conn.getResponseCode() == 200) {
-                                if (isStartDownload){
+                                if (isStartDownload) {
                                     isStartDownload = false;
                                     mHandler.sendEmptyMessage(WHAT_ON_START_DOWNLOAD);
                                 }
@@ -290,9 +292,7 @@ class M3U8DownloadTask {
                             handlerError(e);
                         } catch (Exception e) {
                             handlerError(e);
-                        }
-                        finally
-                        {//关流
+                        } finally {//关流
                             if (inputStream != null) {
                                 try {
                                     inputStream.close();
@@ -311,8 +311,8 @@ class M3U8DownloadTask {
                         m3U8Ts.setFileSize(itemFileSize);
                         mHandler.sendEmptyMessage(WHAT_ON_PROGRESS);
                         curTs++;
-                    }else {
-                        curTs ++;
+                    } else {
+                        curTs++;
                         itemFileSize = file.length();
                         m3U8Ts.setFileSize(itemFileSize);
                     }
@@ -355,10 +355,11 @@ class M3U8DownloadTask {
         }
     }
 
-    public File getM3u8File(String url){
+    public File getM3u8File(String url) {
         try {
+            String m3u8FileName = url.hashCode() + ".m3u8";
             return new File(MUtils.getSaveFileDir(url), m3u8FileName);
-        }catch (Exception e){
+        } catch (Exception e) {
             M3U8Log.e(e.getMessage());
         }
         return null;
