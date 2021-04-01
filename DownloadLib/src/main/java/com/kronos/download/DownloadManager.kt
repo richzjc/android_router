@@ -3,6 +3,8 @@ package com.kronos.download
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import jaygoo.library.m3u8downloader.M3U8Downloader
 import jaygoo.library.m3u8downloader.M3U8DownloaderConfig
@@ -21,10 +23,11 @@ import java.util.regex.Pattern
  * Email leifzhanggithub@gmail.com
  */
 object DownloadManager {
+
     private var models: HashMap<String, DownloadModel>? = null
     private var config: DownloadConfig? = null
     private var m3u8Config: M3U8DownloaderConfig? = null
-
+    private var m3u8Downloader: M3U8Downloader? = null
     private val okHttpClient: OkHttpClient?
         get() = config!!.okHttpClient
 
@@ -49,7 +52,7 @@ object DownloadManager {
         for ((_, value) in models!!) {
             value.state = DownloadConstants.DOWNLOAD_PAUSE
             if (checkIsM3u8(value.downloadUrl))
-                M3U8Downloader.getInstance().cancel(value.downloadUrl)
+                m3u8Downloader?.cancel(value.downloadUrl)
         }
     }
 
@@ -59,10 +62,11 @@ object DownloadManager {
         }
 
         if (checkIsM3u8(url))
-            M3U8Downloader.getInstance().cancel(url)
+            m3u8Downloader?.cancel(url)
     }
 
     fun startAll(context: Context) {
+        initM3u8Config(context)
         if (config!!.settingConfig!!.isAutoDownload() || FileUtils.isConnectWIFI(context)) {
             for ((key, model) in models!!) {
                 model.state = DownloadConstants.DOWNLOADING
@@ -74,6 +78,7 @@ object DownloadManager {
     }
 
     fun start(context: Context, url: String) {
+        initM3u8Config(context)
         if (models!!.containsKey(url)) {
             val intent = Intent(context, DownloadService::class.java)
             intent.putExtra("url", url)
@@ -134,8 +139,7 @@ object DownloadManager {
 
     private fun downloadM3u8(url: String, model: DownloadModel?) {
         model?.state = 0
-        val downloader = M3U8Downloader.getInstance()
-        downloader.setOnM3U8DownloadListener(object : OnM3U8DownloadListener() {
+        m3u8Downloader?.setOnM3U8DownloadListener(object : OnM3U8DownloadListener() {
             override fun onDownloadError(task: M3U8Task?, errorMsg: Throwable?) {
                 super.onDownloadError(task, errorMsg)
                 updateDownloadState(model, task)
@@ -175,7 +179,7 @@ object DownloadManager {
                 model?.downloadLength = task?.m3U8?.fileSize ?: 0
             }
         })
-        downloader.download(url)
+        m3u8Downloader?.download(url)
     }
 
     private fun updateDownloadState(model: DownloadModel?, task: M3U8Task?) {
@@ -285,12 +289,33 @@ object DownloadManager {
     }
 
     private fun initM3u8Config(context: Context) {
-        if (m3u8Config == null) {
-            m3u8Config = M3U8DownloaderConfig.build(context).setThreadCount(1)
-                    .setSaveDir(config!!.downloadFolder)
-                    .setConnTimeout(10000)
-                    .setReadTimeout(10000)
-                    .setDebugMode(false)
+        if (m3u8Config == null || m3u8Downloader == null) {
+            var folder = config!!.downloadFolder
+            if (TextUtils.isEmpty(folder))
+                folder = Environment.getExternalStorageDirectory().path + "/wallstreetcn/"
+            if (Looper.getMainLooper().thread != Thread.currentThread()) {
+                val handler = Handler(Looper.getMainLooper()) {
+                    m3u8Config = M3U8DownloaderConfig.build(context)
+                            .setThreadCount(1)
+                            .setSaveDir(folder)
+                            .setConnTimeout(10000)
+                            .setReadTimeout(10000)
+                            .setDebugMode(false)
+
+                    m3u8Downloader = M3U8Downloader.getInstance()
+                    true
+                }
+                handler.sendEmptyMessage(0)
+            } else {
+                m3u8Config = M3U8DownloaderConfig.build(context)
+                        .setThreadCount(1)
+                        .setSaveDir(config!!.downloadFolder)
+                        .setConnTimeout(10000)
+                        .setReadTimeout(10000)
+                        .setDebugMode(false)
+
+                m3u8Downloader = M3U8Downloader.getInstance()
+            }
         }
     }
 }

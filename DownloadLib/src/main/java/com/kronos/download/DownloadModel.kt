@@ -85,7 +85,7 @@ class DownloadModel : BaseObserveAdapter() {
             e.printStackTrace()
         }
 
-        val suffixes = "avi|mpeg|3gp|mp3|mp4|wav|jpeg|gif|jpg|png|apk|exe|txt|html|zip|java|doc"
+        val suffixes = "avi|mpeg|3gp|mp3|mp4|wav|jpeg|gif|jpg|png|apk|exe|txt|html|zip|java|doc|m3u8|M3U8"
         val pat = Pattern.compile("[\\w]+[\\.]($suffixes)")//正则判断
         val mc = pat.matcher(url)//条件匹配
         var suffix = ""
