@@ -6,7 +6,7 @@ publish {
     userOrg = 'richzjc'
     groupId = 'com.richzjc'
     artifactId = 'wscnDownloadLib'
-    publishVersion = '1.0.9'
+    publishVersion = '1.0.10'
     desc = '离线下载库'
     website = 'https://github.com/novoda/bintray-release'
 }

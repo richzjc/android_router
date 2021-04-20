@@ -105,7 +105,7 @@ class DownloadModel : BaseObserveAdapter() {
         }
         return if (!TextUtils.isEmpty(suffix) && (suffix.endsWith("m3u8") || suffix.endsWith("M3U8")))
             return ".m3u8"
-        else if (TextUtils.isEmpty(suffixName)) {
+        else if (!TextUtils.isEmpty(suffix)) {
             suffix
         } else {
             suffixName
