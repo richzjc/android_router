@@ -2,6 +2,10 @@ package jaygoo.library.m3u8downloader;
 
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
+
+import com.kronos.download.DownloadManager;
+import com.kronos.download.DownloadModel;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import jaygoo.library.m3u8downloader.bean.M3U8;
+import jaygoo.library.m3u8downloader.bean.M3U8Task;
 import jaygoo.library.m3u8downloader.bean.M3U8Ts;
 import jaygoo.library.m3u8downloader.utils.M3U8Log;
 import jaygoo.library.m3u8downloader.utils.MUtils;
@@ -48,10 +53,6 @@ class M3U8DownloadTask {
     //所有文件的大小
     private volatile long totalFileSize = 0;
     private volatile boolean isStartDownload = true;
-    /**
-     * 当前已经在下完成的大小
-     */
-    private long curLength = 0;
     /**
      * 任务是否正在运行中
      */
@@ -111,15 +112,16 @@ class M3U8DownloadTask {
     /**
      * 开始下载
      *
-     * @param url
+     * @param task
      * @param onTaskDownloadListener
      */
-    public void download(final String url, OnTaskDownloadListener onTaskDownloadListener) {
+    public void download(M3U8Task task, OnTaskDownloadListener onTaskDownloadListener) {
+        String url = task.getUrl();
         saveDir = MUtils.getSaveFileDir(url);
         M3U8Log.d("start download ,SaveDir: " + saveDir);
         this.onTaskDownloadListener = onTaskDownloadListener;
         if (!isRunning()) {
-            getM3U8Info(url);
+            getM3U8Info(url, task);
         } else {
             handlerError(new Throwable("Task running"));
         }
@@ -149,59 +151,72 @@ class M3U8DownloadTask {
      *
      * @param url
      */
-    private void getM3U8Info(final String url) {
+    private void getM3U8Info(final String url, final M3U8Task task) {
 
-        M3U8InfoManger.getInstance().getM3U8Info(url, new OnM3U8InfoListener() {
+        if (task.getM3U8() != null && task.getM3U8().getFileSize() > 0) {
+            realStartDownload(task.getM3U8(), task, url);
+        } else {
+            M3U8InfoManger.getInstance().getM3U8Info(url, new OnM3U8InfoListener() {
+                @Override
+                public void onSuccess(final M3U8 m3U8) {
+                    DownloadModel model = DownloadManager.INSTANCE.getModel(url);
+                    if (model != null)
+                        model.setM3u8(m3U8);
+
+                    realStartDownload(m3U8, task, url);
+                }
+
+                @Override
+                public void onStart() {
+                    onTaskDownloadListener.onStart();
+                }
+
+                @Override
+                public void onError(Throwable errorMsg) {
+                    handlerError(errorMsg);
+                }
+            });
+        }
+    }
+
+    private void realStartDownload(final M3U8 m3U8, M3U8Task task, final String url) {
+        currentM3U8 = m3U8;
+        task.setM3U8(m3U8);
+        new Thread() {
             @Override
-            public void onSuccess(final M3U8 m3U8) {
-                currentM3U8 = m3U8;
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            startDownload(m3U8);
-                            if (executor != null) {
-                                executor.shutdown();//下载完成之后要关闭线程池
-                            }
-                            while (executor != null && !executor.isTerminated()) {
-                                //等待中
-                                Thread.sleep(100);
-                            }
-                            if (isRunning) {
-                                String m3u8FileName = url.hashCode() + ".m3u8";
-                                File m3u8File = MUtils.createLocalM3U8(new File(saveDir), m3u8FileName, currentM3U8);
-                                currentM3U8.setM3u8FilePath(m3u8File.getPath());
-                                currentM3U8.setDirFilePath(saveDir);
-                                currentM3U8.getFileSize();
-                                mHandler.sendEmptyMessage(WHAT_ON_SUCCESS);
-                                isRunning = false;
-                            }
-                        } catch (InterruptedIOException e) {
-                            //被中断了，使用stop时会抛出这个，不需要处理
-                            return;
-                        } catch (IOException e) {
-                            handlerError(e);
-                            return;
-                        } catch (InterruptedException e) {
-                            handlerError(e);
-                            return;
-                        } catch (Exception e) {
-                            handlerError(e);
-                        }
+            public void run() {
+                try {
+                    startDownload(m3U8);
+                    if (executor != null) {
+                        executor.shutdown();//下载完成之后要关闭线程池
                     }
-                }.start();
+                    while (executor != null && !executor.isTerminated()) {
+                        //等待中
+                        Thread.sleep(100);
+                    }
+                    if (isRunning) {
+                        String m3u8FileName = url.hashCode() + ".m3u8";
+                        File m3u8File = MUtils.createLocalM3U8(new File(saveDir), m3u8FileName, currentM3U8);
+                        currentM3U8.setM3u8FilePath(m3u8File.getPath());
+                        currentM3U8.setDirFilePath(saveDir);
+                        currentM3U8.getFileSize();
+                        mHandler.sendEmptyMessage(WHAT_ON_SUCCESS);
+                        isRunning = false;
+                    }
+                } catch (InterruptedIOException e) {
+                    //被中断了，使用stop时会抛出这个，不需要处理
+                    return;
+                } catch (IOException e) {
+                    handlerError(e);
+                    return;
+                } catch (InterruptedException e) {
+                    handlerError(e);
+                    return;
+                } catch (Exception e) {
+                    handlerError(e);
+                }
             }
-
-            @Override
-            public void onStart() {
-                onTaskDownloadListener.onStart();
-            }
-
-            @Override
-            public void onError(Throwable errorMsg) {
-                handlerError(errorMsg);
-            }
-        });
+        }.start();
     }
 
     /**
@@ -221,16 +236,6 @@ class M3U8DownloadTask {
         if (executor != null) {
             executor.shutdownNow();
         }
-//        //等待线程池完全关闭
-//        while (executor != null && !executor.isTerminated()) {
-//            //等待中
-//            try {
-//                M3U8Log.d("startDownload wait executor shutDown!");
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {
-//                M3U8Log.e(e.getMessage());
-//            }
-//        }
         M3U8Log.d("executor is shutDown ! Downloading !");
         //初始化值
         curTs = 1;
@@ -240,19 +245,12 @@ class M3U8DownloadTask {
 
         executor = Executors.newFixedThreadPool(threadCount);
         final String basePath = m3U8.getBasePath();
-        netSpeedTimer = new Timer();
-        netSpeedTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                onTaskDownloadListener.onProgress(curLength);
-            }
-        }, 0, 1500);
+        m3U8.setCurrentDownloadLength(0);
 
         for (final M3U8Ts m3U8Ts : m3U8.getTsList()) {//循环下载
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-
                     File file;
                     try {
                         String fileName = M3U8EncryptHelper.encryptFileName(encryptKey, m3U8Ts.obtainEncodeTsFileName());
@@ -261,16 +259,20 @@ class M3U8DownloadTask {
                         file = new File(dir + File.separator + m3U8Ts.getUrl());
                     }
 
-                    if (!file.exists()) {//下载过的就不管了
+                    if (!file.exists() || (file.length() < m3U8Ts.getFileSize())) {//下载过的就不管了
 
                         FileOutputStream fos = null;
                         InputStream inputStream = null;
                         try {
                             URL url = new URL(m3U8Ts.obtainFullUrl(basePath));
                             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                            if (file.exists()) {
+                                conn.setRequestProperty("range", "bytes=" + file.length() + "-");
+                            }
                             conn.setConnectTimeout(connTimeout);
                             conn.setReadTimeout(readTimeout);
-                            if (conn.getResponseCode() == 200) {
+                            int code = conn.getResponseCode();
+                            if (code == 200 || code == 206) {
                                 if (isStartDownload) {
                                     isStartDownload = false;
                                     mHandler.sendEmptyMessage(WHAT_ON_START_DOWNLOAD);
@@ -280,7 +282,8 @@ class M3U8DownloadTask {
                                 int len = 0;
                                 byte[] buf = new byte[8 * 1024 * 1024];
                                 while ((len = inputStream.read(buf)) != -1) {
-                                    curLength += len;
+                                    m3U8.addDownloadLength(len);
+                                    onTaskDownloadListener.onProgress(m3U8.getCurrentDownloadLength(), m3U8.getFileSize());
                                     fos.write(buf, 0, len);//写入流中
                                 }
                             } else {
@@ -308,13 +311,13 @@ class M3U8DownloadTask {
                         }
 
                         itemFileSize = file.length();
-                        m3U8Ts.setFileSize(itemFileSize);
                         mHandler.sendEmptyMessage(WHAT_ON_PROGRESS);
                         curTs++;
                     } else {
                         curTs++;
                         itemFileSize = file.length();
-                        m3U8Ts.setFileSize(itemFileSize);
+                        m3U8.addDownloadLength(file.length());
+                        onTaskDownloadListener.onProgress(m3U8.getCurrentDownloadLength(), m3U8.getFileSize());
                     }
                 }
             });

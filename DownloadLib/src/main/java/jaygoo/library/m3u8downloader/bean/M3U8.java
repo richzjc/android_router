@@ -23,6 +23,14 @@ public class M3U8 {
     private long fileSize;//切片文件总大小
     private long totalTime;//总时间，单位毫秒
     private List<M3U8Ts> tsList = new ArrayList<M3U8Ts>();//视频切片
+    private long currentDownloadLength = 0;
+
+
+    public int getDownloadProgress() {
+        if (fileSize <= 0)
+            return 0;
+        else return (int) (currentDownloadLength * 100 / fileSize);
+    }
 
     public String getBasePath() {
         return basePath;
@@ -50,15 +58,17 @@ public class M3U8 {
 
     public long getFileSize() {
         fileSize = 0;
-        for (M3U8Ts m3U8Ts : tsList){
-            fileSize = fileSize + m3U8Ts.getFileSize();
+        if (tsList != null) {
+            for (M3U8Ts m3U8Ts : tsList) {
+                fileSize = fileSize + m3U8Ts.getFileSize();
+            }
         }
         return fileSize;
     }
 
     public String getFormatFileSize() {
         fileSize = getFileSize();
-        if (fileSize == 0)return "";
+        if (fileSize == 0) return "";
         return MUtils.formatFileSize(fileSize);
     }
 
@@ -78,10 +88,10 @@ public class M3U8 {
         this.tsList.add(ts);
     }
 
-    public long getTotalTime(){
+    public long getTotalTime() {
         totalTime = 0;
-        for (M3U8Ts m3U8Ts : tsList){
-            totalTime = totalTime + (int)(m3U8Ts.getSeconds() * 1000);
+        for (M3U8Ts m3U8Ts : tsList) {
+            totalTime = totalTime + (int) (m3U8Ts.getSeconds() * 1000);
         }
         return totalTime;
     }
@@ -104,10 +114,24 @@ public class M3U8 {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof M3U8){
-            M3U8 m3U8 = (M3U8)obj;
-            if (basePath != null && basePath.equals(m3U8.basePath))return true;
+        if (obj instanceof M3U8) {
+            M3U8 m3U8 = (M3U8) obj;
+            if (basePath != null && basePath.equals(m3U8.basePath)) return true;
         }
         return false;
+    }
+
+    public long getCurrentDownloadLength() {
+        return currentDownloadLength;
+    }
+
+    public void setCurrentDownloadLength(long currentDownloadLength) {
+        this.currentDownloadLength = currentDownloadLength;
+    }
+
+    public void addDownloadLength(long length) {
+        if (length > 0) {
+            currentDownloadLength += length;
+        }
     }
 }

@@ -15,7 +15,6 @@ public class M3U8Task {
     private String url;
     private int state = M3U8TaskState.DEFAULT;
     private long speed;
-    private float progress;
     private M3U8 m3U8;
 
     private M3U8Task(){}
@@ -41,14 +40,6 @@ public class M3U8Task {
     public String getFormatTotalSize() {
         if (m3U8 == null)return "";
         return m3U8.getFormatFileSize();
-    }
-
-    public float getProgress() {
-        return progress;
-    }
-
-    public void setProgress(float progress) {
-        this.progress = progress;
     }
 
     public String getUrl() {

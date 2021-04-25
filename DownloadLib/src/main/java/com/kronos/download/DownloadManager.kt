@@ -6,6 +6,8 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.util.Log
+import android.widget.Toast
 import jaygoo.library.m3u8downloader.M3U8Downloader
 import jaygoo.library.m3u8downloader.M3U8DownloaderConfig
 import jaygoo.library.m3u8downloader.OnM3U8DownloadListener
@@ -29,6 +31,7 @@ object DownloadManager {
     private var config: DownloadConfig? = null
     private var m3u8Config: M3U8DownloaderConfig? = null
     private var m3u8Downloader: M3U8Downloader? = null
+    private var context: Context? = null
     private val okHttpClient: OkHttpClient?
         get() = config!!.okHttpClient
 
@@ -144,44 +147,62 @@ object DownloadManager {
         m3u8Downloader?.setOnM3U8DownloadListener(object : OnM3U8DownloadListener() {
             override fun onDownloadError(task: M3U8Task?, errorMsg: Throwable?) {
                 super.onDownloadError(task, errorMsg)
-                updateDownloadState(model, task)
+                if (checkIsCurrentDownload(url, task))
+                    updateDownloadState(model, task)
             }
 
             override fun onDownloadItem(task: M3U8Task?, itemFileSize: Long, totalTs: Int, curTs: Int) {
                 super.onDownloadItem(task, itemFileSize, totalTs, curTs)
-                updateDownloadState(model, task)
+                if (checkIsCurrentDownload(url, task))
+                    updateDownloadState(model, task)
             }
 
             override fun onDownloadPause(task: M3U8Task?) {
                 super.onDownloadPause(task)
-                updateDownloadState(model, task)
+                if (checkIsCurrentDownload(url, task))
+                    updateDownloadState(model, task)
             }
 
             override fun onDownloadPending(task: M3U8Task?) {
                 super.onDownloadPending(task)
-                updateDownloadState(model, task)
+                if (checkIsCurrentDownload(url, task))
+                    updateDownloadState(model, task)
             }
 
             override fun onDownloadPrepare(task: M3U8Task?) {
                 super.onDownloadPrepare(task)
-                updateDownloadState(model, task)
+                if (checkIsCurrentDownload(url, task))
+                    updateDownloadState(model, task)
             }
 
             override fun onDownloadProgress(task: M3U8Task?) {
                 super.onDownloadProgress(task)
-                updateDownloadState(model, task)
-                model?.updateProgress((task?.progress?.toInt() ?: 0) * 100)
+                Log.i("progress", "${task?.m3U8?.downloadProgress}")
+                if (checkIsCurrentDownload(url, task)) {
+                    updateDownloadState(model, task)
+                    model?.totalLength = task?.m3U8?.fileSize ?: 0
+                    model?.downloadLength = task?.m3U8?.currentDownloadLength ?: 0
+                    if ((task?.m3U8?.downloadProgress ?: 0) >= (model?.progress ?: 0))
+                        model?.updateProgress((task?.m3U8?.downloadProgress ?: 0))
+                }
             }
 
             override fun onDownloadSuccess(task: M3U8Task?) {
                 super.onDownloadSuccess(task)
-                updateDownloadState(model, task)
-                model?.updateProgress(100)
-                model?.totalLength = task?.m3U8?.fileSize ?: 0
-                model?.downloadLength = task?.m3U8?.fileSize ?: 0
+                if (checkIsCurrentDownload(url, task)) {
+                    updateDownloadState(model, task)
+                    model?.totalLength = task?.m3U8?.fileSize ?: 0
+                    model?.downloadLength = task?.m3U8?.fileSize ?: 0
+                    model?.updateProgress(100)
+                }
             }
         })
         m3u8Downloader?.download(url)
+    }
+
+    private fun checkIsCurrentDownload(url: String?, task: M3U8Task?): Boolean {
+        url ?: return false
+        return TextUtils.equals(url, task?.url)
     }
 
     private fun updateDownloadState(model: DownloadModel?, task: M3U8Task?) {
@@ -274,6 +295,7 @@ object DownloadManager {
     }
 
     fun setDownloadModel(url: String, context: Context, fileName: String? = null) {
+        this.context = context;
         initM3u8Config(context)
         isReady()
         var downloadModel = getModel(url)

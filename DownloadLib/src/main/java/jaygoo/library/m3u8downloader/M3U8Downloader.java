@@ -5,6 +5,9 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.kronos.download.DownloadManager;
+import com.kronos.download.DownloadModel;
+
 import java.io.File;
 import java.util.List;
 
@@ -85,6 +88,10 @@ public class M3U8Downloader {
     public void download(String url) {
         if (TextUtils.isEmpty(url) || isQuicklyClick()) return;
         M3U8Task task = new M3U8Task(url);
+        DownloadModel model = DownloadManager.INSTANCE.getModel(url);
+        if (model != null)
+            task.setM3U8(model.getM3u8());
+
         if (downLoadQueue.contains(task)) {
             task = downLoadQueue.getTask(url);
             if (task.getState() == M3U8TaskState.PAUSE || task.getState() == M3U8TaskState.ERROR) {
@@ -220,7 +227,7 @@ public class M3U8Downloader {
         try {
             currentM3U8Task = task;
             M3U8Log.d("====== start downloading ===== " + task.getUrl());
-            m3U8DownLoadTask.download(task.getUrl(), onTaskDownloadListener);
+            m3U8DownLoadTask.download(task, onTaskDownloadListener);
         } catch (Exception e) {
             M3U8Log.e("startDownloadTask Error:" + e.getMessage());
         }
@@ -300,22 +307,17 @@ public class M3U8Downloader {
 
     private OnTaskDownloadListener onTaskDownloadListener = new OnTaskDownloadListener() {
         private long lastLength;
-        private float downloadProgress;
 
         @Override
         public void onStartDownload(int totalTs, int curTs) {
             M3U8Log.d("onStartDownload: " + totalTs + "|" + curTs);
-
             currentM3U8Task.setState(M3U8TaskState.DOWNLOADING);
-            downloadProgress = 1.0f * curTs / totalTs;
         }
 
         @Override
         public void onDownloading(long totalFileSize, long itemFileSize, int totalTs, int curTs) {
             if (!m3U8DownLoadTask.isRunning()) return;
             M3U8Log.d("onDownloading: " + totalFileSize + "|" + itemFileSize + "|" + totalTs + "|" + curTs);
-
-            downloadProgress = 1.0f * curTs / totalTs;
 
             if (onM3U8DownloadListener != null) {
                 onM3U8DownloadListener.onDownloadItem(currentM3U8Task, itemFileSize, totalTs, curTs);
@@ -325,7 +327,6 @@ public class M3U8Downloader {
         @Override
         public void onSuccess(M3U8 m3U8) {
             m3U8DownLoadTask.stop();
-            downloadProgress = 1.0f;
             currentM3U8Task.setM3U8(m3U8);
             currentM3U8Task.setState(M3U8TaskState.SUCCESS);
             if (onM3U8DownloadListener != null) {
@@ -337,13 +338,13 @@ public class M3U8Downloader {
         }
 
         @Override
-        public void onProgress(long curLength) {
-            if (curLength - lastLength > 0) {
-                currentM3U8Task.setProgress(downloadProgress);
+        public void onProgress(long curLength, long totalLength) {
+            if (onM3U8DownloadListener != null) {
+                onM3U8DownloadListener.onDownloadProgress(currentM3U8Task);
+            }
+
+            if (curLength - lastLength >= 0) {
                 currentM3U8Task.setSpeed(curLength - lastLength);
-                if (onM3U8DownloadListener != null) {
-                    onM3U8DownloadListener.onDownloadProgress(currentM3U8Task);
-                }
                 lastLength = curLength;
             }
         }

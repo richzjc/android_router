@@ -6,11 +6,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import butterknife.ButterKnife
 import butterknife.OnClick
+import com.kronos.download.DownloadConfig
 import com.kronos.download.DownloadManager
+import com.kronos.download.DownloadManager.setConfig
+import com.kronos.download.DownloadSettingConfig
 import com.kronos.router.Router
-import jaygoo.library.m3u8downloader.M3U8Downloader
 import jaygoo.library.m3u8downloader.M3U8DownloaderConfig
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,6 +21,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         Router.sharedRouter().attachApplication(application)
         ButterKnife.bind(this)
+
+
+        val settingConfig = DownloadSettingConfig().setFileSuffix(".temp").setAutoDownload(false)
+        val downloadConfig = DownloadConfig.Builder()
+                .setSettingConfig(settingConfig)
+                .builder()
+        setConfig(downloadConfig)
+
         M3U8DownloaderConfig.build(this)
         if(M3u8C.downloader == null)
             Toast.makeText(this, "是空的", Toast.LENGTH_LONG).show()
@@ -27,9 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     @OnClick(R.id.routerTesting, R.id.routerBaidu)
     fun onClick(view: View) {
-        thread {
-            DownloadManager.pause("https://www.baidu.com")
-        }
+            DownloadManager.setDownloadModel("https://streaming.wallstcn.com/bd66ff2e-6f04-401e-bed7-75e1150740f7_hls.m3u8", this)
 //        when (view.id) {
 //            R.id.routerTesting -> Router.sharedRouter().open("https://www.baidu.com/test", this)
 //            R.id.routerBaidu -> Router.sharedRouter().open("https://www.baidu.com/test/12345", this)

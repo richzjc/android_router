@@ -6,6 +6,8 @@ import android.os.Looper
 import android.text.TextUtils
 
 import com.kronos.download.adapter.BaseObserveAdapter
+import jaygoo.library.m3u8downloader.bean.M3U8
+import jaygoo.library.m3u8downloader.utils.MUtils
 
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -27,6 +29,8 @@ class DownloadModel : BaseObserveAdapter() {
     var state: Int = 0
     var totalLength: Long = 0
     internal var downloadLength: Long = 0
+
+    var m3u8: M3U8? = null
 
     private val handler = Handler(Looper.getMainLooper(), Handler.Callback { msg ->
         when (msg.what) {
@@ -122,6 +126,9 @@ class DownloadModel : BaseObserveAdapter() {
 
     fun deleteFile() {
         val file = File(sdCardFile)
+        if (DownloadManager.checkIsM3u8(downloadUrl))
+            MUtils.deleteM3u8(file);
         file.delete()
+
     }
 }

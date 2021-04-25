@@ -55,6 +55,20 @@ public class M3U8Ts implements Comparable<M3U8Ts> {
             return hostUrl.concat(url);
         }
     }
+
+    public static String obtainFullUrl(String url, String hostUrl){
+        if (url == null) {
+            return null;
+        }
+        if (url.startsWith("http")) {
+            return url;
+        }else if (url.startsWith("//")) {
+            return "http:".concat(url);
+        }else {
+            return hostUrl.concat(url);
+        }
+    }
+
     @Override
     public String toString() {
         return url + " (" + seconds + "sec)";
