@@ -1,26 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'com.novoda.bintray-release' // must be applied after your artifact generating plugin (eg. java / com.android.library)
-
-publish {
-    userOrg = 'richzjc'
-    groupId = 'com.richzjc'
-    artifactId = 'wscnDownloadLib'
-    publishVersion = '1.0.14'
-    desc = '离线下载库'
-    website = 'https://github.com/novoda/bintray-release'
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.novoda:bintray-release:0.9.1'
-    }
-}
 
 android {
     compileSdkVersion 28
@@ -57,4 +36,20 @@ dependencies {
     provided 'com.android.support:appcompat-v7:26.+'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.github.NanoHttpd.nanohttpd:nanohttpd:master'
+}
+
+apply plugin: 'maven'
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: Maven) {
+                authentication(userName: properties.getProperty("userName"), password: properties.getProperty("password"))
+            }
+            pom.version = "1.0.14"
+            pom.artifactId = "wscnDownloadLib"
+            pom.groupId = "com.github.richzjc"
+        }
+    }
 }
